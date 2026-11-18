@@ -1,0 +1,67 @@
+<?php
+
+namespace App\Providers;
+
+use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Blade;
+
+class AppServiceProvider extends ServiceProvider
+{
+    /**
+     * Register any application services.
+     */
+    public function register(): void
+    {
+        if (file_exists(app_path('Helpers/helpers.php'))) {
+            require_once app_path('Helpers/helpers.php');
+        }
+    }
+
+    /**
+     * Bootstrap any application services.
+     */
+    public function boot(): void
+    {
+        // Blade Directives untuk tombol aksi seragam
+        Blade::directive('btnEdit', function ($expression) {
+            return "<?php echo \App\Helpers\ActionHelper::edit($expression); ?>";
+        });
+
+        Blade::directive('btnDelete', function ($expression) {
+            return "<?php echo \App\Helpers\ActionHelper::delete($expression); ?>";
+        });
+
+        Blade::directive('btnActions', function ($expression) {
+            return "<?php echo \App\Helpers\ActionHelper::actions($expression); ?>";
+        });
+
+        Blade::directive('btnCreate', function ($expression) {
+            return "<?php echo \App\Helpers\ActionHelper::create($expression); ?>";
+        });
+
+        Blade::directive('btnPrint', function ($expression) {
+            return "<?php echo \App\Helpers\ActionHelper::print($expression); ?>";
+        });
+
+        Blade::directive('btnBack', function ($expression) {
+            return "<?php echo \App\Helpers\ActionHelper::back($expression); ?>";
+        });
+
+        Blade::directive('btnSave', function ($expression) {
+            return "<?php echo \App\Helpers\ActionHelper::save($expression); ?>";
+        });
+
+        Blade::directive('btnReset', function ($expression) {
+            return "<?php echo \App\Helpers\ActionHelper::reset($expression); ?>";
+        });
+
+        // Share store settings ke seluruh views
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasTable('settings')) {
+                \Illuminate\Support\Facades\View::share('storeSetting', \App\Models\Setting::getSettings());
+            }
+        } catch (\Exception $e) {
+            // Abaikan jika database belum terhubung
+        }
+    }
+}
