@@ -15,9 +15,15 @@ return new class extends Migration
             $table->increments('id_barang');
             $table->string('nama', 100);
             $table->string('kategori', 50);
+            $table->string('sub_kategori', 100)->nullable();
             $table->string('supplier', 100);
             $table->string('stok', 5);
             $table->string('harga', 50);
+            $table->boolean('promo_aktif')->default(false);
+            $table->unsignedTinyInteger('promo_persen')->nullable();
+            $table->integer('harga_promo')->nullable();
+            $table->dateTime('promo_mulai')->nullable();
+            $table->dateTime('promo_selesai')->nullable();
             $table->string('gambar')->nullable();
             $table->timestamps();
         });

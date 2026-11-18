@@ -14,10 +14,13 @@ return new class extends Migration
         Schema::create('reviews', function (Blueprint $table) {
             $table->id('id_review');
             $table->unsignedInteger('barang_id');
+            $table->unsignedInteger('order_id')->nullable();
+            $table->string('kode_order', 50)->nullable();
             $table->string('nama_reviewer', 100);
             $table->string('email_reviewer', 150)->nullable();
             $table->unsignedTinyInteger('rating')->default(5); // 1 to 5
             $table->text('komentar');
+            $table->string('foto')->nullable();
             $table->enum('status', ['approved', 'pending'])->default('approved');
             $table->timestamps();
 

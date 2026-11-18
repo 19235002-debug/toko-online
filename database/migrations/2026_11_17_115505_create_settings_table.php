@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -19,6 +20,9 @@ return new class extends Migration
             $table->text('alamat_toko')->nullable();
             $table->text('rekening_bank')->nullable();
             $table->text('deskripsi_toko')->nullable();
+            $table->integer('ongkir_reguler')->default(15000);
+            $table->integer('ongkir_express')->default(30000);
+            $table->integer('min_gratis_ongkir')->default(300000);
             $table->timestamps();
         });
 

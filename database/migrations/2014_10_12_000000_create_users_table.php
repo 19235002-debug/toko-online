@@ -20,6 +20,7 @@ return new class extends Migration
             $table->rememberToken();
             $table->enum('role', ['admin', 'user', 'superadmin'])->default('user');
             $table->string('no_hp')->nullable();
+            $table->text('alamat')->nullable();
             $table->string('user_image')->nullable();
             $table->timestamps();
         });

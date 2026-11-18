@@ -13,23 +13,35 @@ return new class extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->increments('id_order');
+            $table->unsignedInteger('user_id')->nullable();
             $table->string('kode_order', 50)->unique();
             $table->string('nama_customer', 100);
             $table->string('no_hp', 30);
             $table->text('alamat');
             $table->text('catatan')->nullable();
+            $table->string('kode_voucher', 50)->nullable();
+            $table->bigInteger('diskon')->default(0);
+            $table->integer('ongkir')->default(0);
             $table->string('metode_pembayaran', 50)->default('transfer');
+            $table->string('snap_token')->nullable();
             $table->string('bukti_transfer')->nullable();
             $table->bigInteger('total_harga');
             $table->enum('status', ['pending', 'diproses', 'dikirim', 'selesai', 'dibatalkan'])->default('pending');
+            $table->string('ekspedisi', 50)->nullable();
+            $table->string('kurir', 50)->nullable();
+            $table->string('no_resi', 100)->nullable();
             $table->timestamps();
+
+            $table->foreign('user_id')->references('id_user')->on('users')->onDelete('set null');
         });
 
         Schema::create('order_items', function (Blueprint $table) {
             $table->increments('id_order_item');
             $table->unsignedInteger('order_id');
             $table->unsignedInteger('barang_id')->nullable();
+            $table->unsignedInteger('variasi_id')->nullable();
             $table->string('nama_barang', 100);
+            $table->string('variasi', 100)->nullable();
             $table->bigInteger('harga');
             $table->integer('qty');
             $table->bigInteger('subtotal');
