@@ -127,5 +127,52 @@
 			padding: 14px !important;
 		}
 	}
+
+	/* Storefront Desktop Sticky Header Navbar Polish */
+	.container-menu-desktop {
+		height: 70px !important;
+	}
+
+	.wrap-menu-desktop,
+	.fix-menu-desktop .wrap-menu-desktop {
+		position: fixed !important;
+		top: 0 !important;
+		left: 0 !important;
+		right: 0 !important;
+		width: 100% !important;
+		height: 70px !important;
+		background-color: rgba(255, 255, 255, 0.96) !important;
+		backdrop-filter: blur(12px);
+		-webkit-backdrop-filter: blur(12px);
+		border-bottom: 1px solid #e2e8f0 !important;
+		box-shadow: 0 4px 18px rgba(15, 23, 42, 0.06) !important;
+		z-index: 1000 !important;
+	}
+
+	/* Quick View Title Alignment & Disabled/Muted Out-of-Stock Variants */
+	.quickview-info-col {
+		justify-content: flex-start !important;
+		padding-top: 28px !important;
+	}
+
+	.var-pill.is-unavailable,
+	.var-pill:disabled {
+		opacity: 0.45 !important;
+		background-color: #f1f5f9 !important;
+		color: #94a3b8 !important;
+		border: 1px dashed #cbd5e1 !important;
+		text-decoration: line-through !important;
+		cursor: not-allowed !important;
+		pointer-events: none !important;
+		box-shadow: none !important;
+	}
+
+	.quickview-btn-cart:disabled {
+		background: #cbd5e1 !important;
+		color: #64748b !important;
+		cursor: not-allowed !important;
+		box-shadow: none !important;
+		transform: none !important;
+	}
 </style>
 

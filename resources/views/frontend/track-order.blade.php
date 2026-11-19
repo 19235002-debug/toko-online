@@ -70,7 +70,12 @@
 		.track-hero-modern {
 			background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 55%, #f5f3ff 100%);
 			border-bottom: 1px solid #e2e8f0;
-			padding: 42px 0 64px 0;
+			padding: 112px 0 64px 0;
+		}
+		@media (max-width: 991px) {
+			.track-hero-modern {
+				padding: 90px 0 56px 0;
+			}
 		}
 		.track-breadcrumb {
 			font-size: 13px;
@@ -392,14 +397,14 @@
 						<form action="{{ route('frontend.track') }}" method="GET">
 							<div class="tracking-input-group">
 								<i class="zmdi zmdi-search text-muted" style="font-size: 19px;"></i>
-								<input type="text" name="order" class="form-control tracking-input" placeholder="Masukkan Nomor Invoice (cth: ORD-20261117-0004) atau No. WhatsApp" value="{{ $keyword }}" required autofocus>
+								<input type="text" name="order" class="form-control tracking-input" placeholder="Masukkan Nomor Invoice (cth: ORD-20261119-0001), Nomor Resi, atau No. WhatsApp" value="{{ $keyword }}" required autofocus>
 								<button type="submit" class="tracking-btn">
 									<i class="zmdi zmdi-search mr-1"></i> Lacak Pesanan
 								</button>
 							</div>
 							<div class="d-flex flex-wrap justify-content-between align-items-center mt-3 px-1" style="gap: 8px;">
 								<small class="text-muted" style="font-size: 12px;">
-									<i class="fa fa-info-circle text-primary mr-1"></i> Cari menggunakan <strong>Kode Invoice</strong> atau <strong>Nomor WhatsApp</strong> yang digunakan saat checkout.
+									<i class="fa fa-info-circle text-primary mr-1"></i> Cari menggunakan <strong>Kode Invoice</strong>, <strong>Nomor Resi</strong>, atau <strong>Nomor WhatsApp</strong> yang digunakan saat checkout.
 								</small>
 								@if($searched)
 								<a href="{{ route('frontend.track') }}" class="text-danger font-weight-bold" style="font-size: 12px;">
@@ -428,7 +433,7 @@
 							</p>
 							<div>
 								<a href="{{ store_wa_url('Halo Admin, saya ingin menanyakan status pesanan saya: ' . $keyword) }}" target="_blank" class="btn btn-success px-4 font-weight-bold" style="border-radius: 10px;">
-									<i class="fa fa-whatsapp mr-1"></i> Tanya Admin via WhatsApp
+									<i class="fab fa-whatsapp mr-1"></i> Tanya Admin via WhatsApp
 								</a>
 							</div>
 						</div>
@@ -451,7 +456,7 @@
 									<div class="text-muted" style="font-size: 12px; text-transform: uppercase;">Status Saat Ini</div>
 									<div class="mt-1">
 										@if($order->status == 'pending')
-											<span class="badge badge-warning text-white px-3 py-2" style="font-size: 14px;"><i class="fas fa-clock mr-1"></i> Menunggu Pembayaran</span>
+											<span class="badge badge-warning text-white px-3 py-2" style="font-size: 14px;"><i class="fas fa-clock mr-1"></i> {{ $order->status_label }}</span>
 										@elseif($order->status == 'diproses')
 											<span class="badge badge-info px-3 py-2" style="font-size: 14px;"><i class="fas fa-box mr-1"></i> Sedang Dikemas (Packing)</span>
 										@elseif($order->status == 'dikirim')
@@ -533,7 +538,12 @@
 
 											<div class="d-flex justify-content-between py-2 border-bottom">
 												<span class="text-muted">Kurir / Ekspedisi:</span>
-												<strong class="text-dark">{{ $order->ekspedisi ?: 'Menunggu Penyerahan ke Kurir' }}</strong>
+												<strong class="text-dark">
+													{{ $order->kurir ?? $order->ekspedisi ?: 'Menunggu Penyerahan ke Kurir' }}
+													@if($order->estimasi)
+														<small class="text-muted font-weight-normal">({{ $order->estimasi }})</small>
+													@endif
+												</strong>
 											</div>
 
 											<div class="d-flex justify-content-between align-items-center py-2 border-bottom">
@@ -590,6 +600,11 @@
 												<p class="text-dark mb-0" style="font-size: 14px; line-height: 1.5;">
 													{{ $order->alamat }}
 												</p>
+												@if($order->destination_label)
+												<small class="text-primary font-weight-bold d-block mt-1">
+													<i class="fa fa-map-pin mr-1"></i> {{ $order->destination_label }}
+												</small>
+												@endif
 											</div>
 
 											@if($order->catatan)
@@ -600,6 +615,33 @@
 										</div>
 									</div>
 								</div>
+
+								@if(!empty($tracking) && !empty($tracking['manifest']))
+								<!-- Riwayat Pelacakan Resi RajaOngkir -->
+								<div class="track-info-panel m-b-20" style="background: #f8fafc; border-left: 4px solid #717fe0;">
+									<div class="d-flex justify-content-between align-items-center mb-3">
+										<h6 class="font-weight-bold text-dark mb-0">
+											<i class="fa fa-route text-primary mr-1"></i> Riwayat Perjalanan Paket ({{ $order->ekspedisi ?? 'Kurir' }})
+										</h6>
+										@if(!empty($tracking['status']))
+											<span class="badge badge-{{ !empty($tracking['delivered']) ? 'success' : 'info' }} px-2 py-1">{{ $tracking['status'] }}</span>
+										@endif
+									</div>
+									<div class="d-flex flex-column" style="gap: 8px; max-height: 220px; overflow-y: auto;">
+										@foreach($tracking['manifest'] as $m)
+										<div class="d-flex justify-content-between align-items-start pb-2 border-bottom" style="font-size: 13px;">
+											<div>
+												<div class="text-dark font-weight-bold">{{ $m['description'] }}</div>
+												@if(!empty($m['city']))
+													<small class="text-muted"><i class="fa fa-map-marker mr-1"></i>{{ $m['city'] }}</small>
+												@endif
+											</div>
+											<small class="text-muted text-nowrap ml-2">{{ $m['date'] }}</small>
+										</div>
+										@endforeach
+									</div>
+								</div>
+								@endif
 
 								<!-- Rincian Produk -->
 								<h6 class="font-weight-bold text-dark m-t-15 m-b-15">
@@ -716,7 +758,7 @@
 											$waInquiryUrl = store_wa_url($waInquiry);
 										@endphp
 										<a href="{{ $waInquiryUrl }}" target="_blank" class="btn btn-success btn-sm font-weight-bold px-3" style="border-radius: 6px;">
-											<i class="fa fa-whatsapp mr-1"></i> Hubungi Admin Toko
+											<i class="fab fa-whatsapp mr-1"></i> Hubungi Admin Toko
 										</a>
 									</div>
 								</div>
@@ -777,71 +819,7 @@
 	<script src="{{ asset('frontend-assets/vendor/bootstrap/js/popper.js') }}"></script>
 	<script src="{{ asset('frontend-assets/vendor/bootstrap/js/bootstrap.min.js') }}"></script>
 <!--===============================================================================================-->
-	<script src="{{ asset('vendor/sweetalert/sweetalert.all.js') }}"></script>
-	<style>
-		.swal2-container.swal2-top-end,
-		.swal2-container.swal2-top-right {
-			z-index: 99999 !important;
-		}
-		.swal2-popup.swal2-toast {
-			border-radius: 12px !important;
-			padding: 12px 16px !important;
-			box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12) !important;
-			border: 1px solid rgba(0, 0, 0, 0.06) !important;
-			overflow: hidden !important;
-		}
-		.swal2-popup.swal2-toast .swal2-timer-progress-bar {
-			background: linear-gradient(90deg, #717fe0, #4f46e5) !important;
-			height: 4px !important;
-		}
-	</style>
-	<script>
-		// Modern SweetAlert2 Toast (3 detik + animasi loading progress bar di bawah toast)
-		window.Toast = Swal.mixin({
-			toast: true,
-			position: 'top-end',
-			showConfirmButton: false,
-			showCloseButton: true,
-			timer: 3000,
-			timerProgressBar: true,
-			didOpen: function(toast) {
-				toast.onmouseenter = Swal.stopTimer;
-				toast.onmouseleave = Swal.resumeTimer;
-			}
-		});
-
-		window.swal = function() {
-			var args = Array.prototype.slice.call(arguments);
-			if (args.length === 1 && typeof args[0] === 'object' && args[0] !== null) {
-				var cfg = args[0];
-				if (cfg.buttons) {
-					var swal2Cfg = {
-						title: cfg.title || '',
-						text: cfg.text || '',
-						icon: cfg.icon || 'info',
-						confirmButtonColor: '#717fe0',
-						cancelButtonColor: '#6c757d',
-						showCancelButton: Boolean(cfg.buttons.cancel),
-						cancelButtonText: (typeof cfg.buttons.cancel === 'string') ? cfg.buttons.cancel : 'Tutup',
-						confirmButtonText: (cfg.buttons.confirm && cfg.buttons.confirm.text) ? cfg.buttons.confirm.text : 'OK',
-					};
-					return Swal.fire(swal2Cfg).then(function(result) {
-						return result.isConfirmed;
-					});
-				}
-				return window.Toast.fire({
-					title: cfg.title || '',
-					text: cfg.text || '',
-					icon: cfg.icon || 'info'
-				});
-			}
-			return window.Toast.fire({
-				title: args[0] || '',
-				text: args[1] || '',
-				icon: args[2] || 'info'
-			});
-		};
-	</script>
+	@include('frontend.partials.toast-scripts')
 <!--===============================================================================================-->
 	<script src="{{ asset('frontend-assets/js/main.js') }}"></script>
 
@@ -963,7 +941,25 @@
 			});
 		}
 
-		// Midtrans pay handler jika pesanan pending
+		// Midtrans pay handler & auto-sync jika pesanan pending
+		@if(isset($order) && $order && $order->status === 'pending' && $order->metode_pembayaran === 'midtrans')
+		(function() {
+			var trackKode = '{{ $order->kode_order }}';
+			setInterval(function() {
+				$.post('/midtrans/sync/' + trackKode, { _token: '{{ csrf_token() }}' }, function(res) {
+					if (res && res.status && res.status !== 'pending') {
+						try {
+							if (window.snap && typeof window.snap.hide === 'function') {
+								window.snap.hide();
+							}
+						} catch (e) {}
+						location.reload();
+					}
+				});
+			}, 4000);
+		})();
+		@endif
+
 		function payWithSnap(snapToken, kodeOrder) {
 			if (typeof window.snap === 'undefined') {
 				alert('Modul pembayaran Midtrans sedang dimuat, silakan coba sesaat lagi.');
@@ -972,21 +968,20 @@
 
 			window.snap.pay(snapToken, {
 				onSuccess: function(result) {
-					$.post('/midtrans/sync/' + kodeOrder, function() {
-						swal("Pembayaran Berhasil!", "Terima kasih, pembayaran pesanan " + kodeOrder + " telah diterima.", "success")
-							.then(function() {
-								location.reload();
-							});
+					$.post('/midtrans/sync/' + kodeOrder, { _token: '{{ csrf_token() }}' }, function() {
+						location.reload();
 					});
 				},
 				onPending: function(result) {
-					swal("Menunggu Pembayaran", "Silakan selesaikan pembayaran sesuai instruksi Midtrans.", "info");
+					$.post('/midtrans/sync/' + kodeOrder, { _token: '{{ csrf_token() }}' }, function() {
+						location.reload();
+					});
 				},
 				onError: function(result) {
 					swal("Pembayaran Gagal", "Pembayaran gagal diproses.", "error");
 				},
 				onClose: function() {
-					$.post('/midtrans/sync/' + kodeOrder, function() {
+					$.post('/midtrans/sync/' + kodeOrder, { _token: '{{ csrf_token() }}' }, function() {
 						location.reload();
 					});
 				}

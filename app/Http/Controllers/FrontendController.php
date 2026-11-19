@@ -12,6 +12,7 @@ use App\Models\BarangVariasi;
 use App\Models\BarangGambar;
 use App\Models\Voucher;
 use App\Services\ImageCompressor;
+use App\Services\RajaOngkirService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -46,7 +47,7 @@ class FrontendController extends Controller
 
         $totalProduk = (clone $query)->count();
         $barang = $query->with(['approvedReviews', 'gambars', 'variasis'])->orderBy('id_barang', 'desc')->take(8)->get();
-        $promoProducts = Barang::with(['approvedReviews', 'gambars', 'variasis'])->promoActive()->orderBy('id_barang', 'desc')->take(8)->get();
+        $promoProducts = Barang::with(['approvedReviews', 'gambars', 'variasis'])->promoActive()->orderBy('id_barang', 'desc')->take(4)->get();
         $mainKategoris = Kategori::main()->with('children')->get();
         $categories = $mainKategoris->pluck('nama_kategori');
         if ($categories->isEmpty()) {
@@ -225,6 +226,7 @@ class FrontendController extends Controller
             'is_promo_active' => $item->is_promo_active,
             'diskon_persen' => $item->diskon_persen_aktual,
             'promo_selesai' => $item->promo_selesai ? $item->promo_selesai->format('d M Y H:i') : null,
+            'promo_selesai_iso' => $item->promo_selesai ? $item->promo_selesai->toIso8601String() : null,
             'gambar' => $images[0],
             'images' => $images,
             'has_variants' => $item->variasis->count() > 0,
@@ -430,6 +432,10 @@ class FrontendController extends Controller
         }
 
         $order->status = 'selesai';
+        $order->completed_at = now();
+        if ($order->metode_pembayaran === 'cod' && !$order->paid_at) {
+            $order->paid_at = now();
+        }
         $order->save();
 
         return redirect()->route('frontend.track', ['order' => $kode_order])
@@ -448,8 +454,11 @@ class FrontendController extends Controller
         if ($keyword !== '') {
             $searched = true;
             $order = Order::with('items.barang')
-                ->where('kode_order', $keyword)
-                ->orWhere('no_hp', $keyword)
+                ->where(function ($q) use ($keyword) {
+                    $q->where('kode_order', $keyword)
+                        ->orWhere('no_resi', $keyword)
+                        ->orWhere('no_hp', $keyword);
+                })
                 ->latest('id_order')
                 ->first();
 
@@ -460,7 +469,35 @@ class FrontendController extends Controller
             }
         }
 
-        return view('frontend.track-order', compact('order', 'keyword', 'searched'));
+        // Riwayat perjalanan paket dari RajaOngkir (jika resi sudah diinput admin)
+        $tracking = null;
+        if ($order && $order->no_resi && in_array($order->status, ['dikirim', 'selesai'], true)) {
+            $tracking = RajaOngkirService::trackWaybill($order->no_resi, $order->kurir_kode ?: strtolower((string) $order->ekspedisi));
+        }
+
+        return view('frontend.track-order', compact('order', 'keyword', 'searched', 'tracking'));
+    }
+
+    /**
+     * Nama ekspedisi yang rapi dari kode kurir RajaOngkir.
+     */
+    public static function courierDisplayName(string $code, ?string $fallback = null): string
+    {
+        $map = [
+            'jne' => 'JNE',
+            'jnt' => 'J&T',
+            'sicepat' => 'SiCepat',
+            'anteraja' => 'AnterAja',
+            'pos' => 'POS Indonesia',
+            'tiki' => 'TIKI',
+            'ninja' => 'Ninja Xpress',
+            'lion' => 'Lion Parcel',
+            'ide' => 'ID Express',
+            'sap' => 'SAP Express',
+            'wahana' => 'Wahana',
+        ];
+
+        return $map[strtolower($code)] ?? ($fallback ?: strtoupper($code));
     }
 
     /**
@@ -499,6 +536,88 @@ class FrontendController extends Controller
             ->paginate(10);
 
         return view('frontend.pesanan-saya', compact('orders', 'user'));
+    }
+
+    /**
+     * Cari kecamatan / kota tujuan pengiriman via RajaOngkir.
+     */
+    public function shippingDestinations(Request $request)
+    {
+        $q = trim((string) $request->query('q', ''));
+        $results = RajaOngkirService::searchDestination($q, 15);
+
+        return response()->json([
+            'success' => true,
+            'destinations' => $results,
+        ]);
+    }
+
+    /**
+     * Hitung daftar tarif ongkir kurir (JNE, J&T, SiCepat) via RajaOngkir.
+     */
+    public function shippingCost(Request $request)
+    {
+        $validated = $request->validate([
+            'destination_id' => 'required|integer|min:1',
+            'total_qty' => 'nullable|integer|min:1',
+        ]);
+
+        $qty = max(1, intval($validated['total_qty'] ?? 1));
+        $weightGrams = RajaOngkirService::weightForQty($qty);
+
+        $options = RajaOngkirService::calculateCost((int) $validated['destination_id'], $weightGrams);
+
+        return response()->json([
+            'success' => true,
+            'weight_grams' => $weightGrams,
+            'options' => $options,
+        ]);
+    }
+
+    /**
+     * Ambil daftar voucher aktif yang tersedia untuk ditampilkan di modal checkout.
+     */
+    public function availableVouchers(Request $request)
+    {
+        $subtotal = max(0, intval($request->query('subtotal', 0)));
+        $today = now()->toDateString();
+
+        $vouchers = Voucher::where('status', true)
+            ->where(function ($q) use ($today) {
+                $q->whereNull('tanggal_mulai')->orWhereDate('tanggal_mulai', '<=', $today);
+            })
+            ->where(function ($q) use ($today) {
+                $q->whereNull('tanggal_selesai')->orWhereDate('tanggal_selesai', '>=', $today);
+            })
+            ->where(function ($q) {
+                $q->whereNull('kuota')->orWhereColumn('digunakan', '<', 'kuota');
+            })
+            ->orderBy('minimal_belanja', 'asc')
+            ->get()
+            ->map(function ($v) use ($subtotal) {
+                $minBelanja = intval($v->minimal_belanja ?? 0);
+                $eligible = $subtotal >= $minBelanja;
+                $labelDiskon = $v->tipe === 'persen'
+                    ? 'Diskon ' . intval($v->nilai) . '%'
+                    : 'Potongan Rp ' . number_format(intval($v->nilai), 0, ',', '.');
+
+                return [
+                    'kode_voucher' => $v->kode_voucher,
+                    'nama_voucher' => $v->nama_voucher,
+                    'label_diskon' => $labelDiskon,
+                    'minimal_belanja' => $minBelanja,
+                    'maksimal_diskon' => $v->maksimal_diskon ? intval($v->maksimal_diskon) : null,
+                    'tanggal_selesai' => $v->tanggal_selesai ? $v->tanggal_selesai->format('d M Y') : null,
+                    'eligible' => $eligible,
+                    'kurang' => max(0, $minBelanja - $subtotal),
+                ];
+            })
+            ->values();
+
+        return response()->json([
+            'success' => true,
+            'vouchers' => $vouchers,
+        ]);
     }
 
     /**
@@ -748,7 +867,10 @@ class FrontendController extends Controller
             'no_hp' => ['required', 'regex:/^[0-9]{10,15}$/'],
             'alamat' => 'required|string',
             'metode_pembayaran' => 'required|in:midtrans,cod',
-            'kurir' => 'nullable|in:reguler,express',
+            'destination_id' => 'required|integer|min:1',
+            'destination_label' => 'required|string|max:255',
+            'courier_code' => 'required|string|max:20',
+            'courier_service' => 'required|string|max:50',
             'catatan' => 'nullable|string',
             'kode_voucher' => 'nullable|string|max:50',
             'cart_items' => 'required',
@@ -757,6 +879,10 @@ class FrontendController extends Controller
             'no_hp.required' => 'Nomor WhatsApp / HP wajib diisi.',
             'no_hp.regex' => 'Nomor WhatsApp / HP hanya boleh berupa angka (10 - 15 digit, contoh: 081234567890).',
             'alamat.required' => 'Alamat pengiriman wajib diisi.',
+            'destination_id.required' => 'Pilih kecamatan / kota tujuan pengiriman terlebih dahulu.',
+            'destination_label.required' => 'Pilih kecamatan / kota tujuan pengiriman terlebih dahulu.',
+            'courier_code.required' => 'Pilih layanan kurir pengiriman terlebih dahulu.',
+            'courier_service.required' => 'Pilih layanan kurir pengiriman terlebih dahulu.',
         ]);
 
         $cart = is_string($request->cart_items) ? json_decode($request->cart_items, true) : $request->cart_items;
@@ -768,8 +894,28 @@ class FrontendController extends Controller
             ], 422);
         }
 
+        // Hitung ulang ongkir di server berdasarkan tarif resmi RajaOngkir (tidak mempercayai nilai dari browser)
+        $totalQty = 0;
+        foreach ($cart as $c) {
+            $totalQty += max(0, intval($c['qty'] ?? 1));
+        }
+        $beratGram = RajaOngkirService::weightForQty($totalQty);
+        $shipping = RajaOngkirService::findOption(
+            (int) $validated['destination_id'],
+            $beratGram,
+            $validated['courier_code'],
+            $validated['courier_service']
+        );
+
+        if (!$shipping) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Layanan kurir yang dipilih tidak tersedia untuk tujuan ini. Silakan pilih ulang kurir pengiriman.',
+            ], 422);
+        }
+
         try {
-            $order = DB::transaction(function () use ($validated, $cart) {
+            $order = DB::transaction(function () use ($validated, $cart, $shipping, $beratGram) {
                 $totalHarga = 0;
                 $validatedItems = [];
 
@@ -847,21 +993,12 @@ class FrontendController extends Controller
                     $voucher->save();
                 }
 
-                $storeSetting = \App\Models\Setting::getSettings();
-                $regulerRate = intval($storeSetting->ongkir_reguler ?? 15000);
-                $expressRate = intval($storeSetting->ongkir_express ?? 30000);
-                $minFreeRate = intval($storeSetting->min_gratis_ongkir ?? 300000);
+                $ongkir = intval($shipping['cost']);
 
-                $kurir = $validated['kurir'] ?? null;
-                $ongkir = 0;
-                $kurirLabel = 'Gratis Ongkir';
-                if ($kurir === 'express') {
-                    $ongkir = $expressRate;
-                    $kurirLabel = 'Express (1 Hari)';
-                } elseif ($kurir === 'reguler') {
-                    $ongkir = ($totalHarga >= $minFreeRate) ? 0 : $regulerRate;
-                    $kurirLabel = $ongkir === 0 ? 'Reguler (Gratis Ongkir)' : 'Reguler (2-3 Hari)';
-                }
+                $kurirKode = strtolower($shipping['code']);
+                $layanan = strtoupper($shipping['service']);
+                $ekspedisi = self::courierDisplayName($kurirKode, $shipping['courier_name'] ?? null);
+                $kurirLabel = $ekspedisi . ' ' . $layanan;
 
                 $finalTotal = max(0, $totalHarga - $diskon) + $ongkir;
 
@@ -871,12 +1008,18 @@ class FrontendController extends Controller
                     'kode_order' => Order::generateKodeOrder(),
                     'nama_customer' => $validated['nama_customer'],
                     'no_hp' => $validated['no_hp'],
-                    'alamat' => $validated['alamat'],
+                    'alamat' => trim($validated['alamat']),
+                    'destination_id' => (int) $validated['destination_id'],
+                    'destination_label' => trim($validated['destination_label']),
                     'catatan' => $validated['catatan'] ?? null,
                     'kode_voucher' => $kodeVoucher,
                     'diskon' => $diskon,
                     'kurir' => $kurirLabel,
-                    'ekspedisi' => $kurirLabel,
+                    'kurir_kode' => $kurirKode,
+                    'layanan_kurir' => $layanan,
+                    'estimasi' => $shipping['etd'] ?? null,
+                    'berat' => $beratGram,
+                    'ekspedisi' => $ekspedisi,
                     'ongkir' => $ongkir,
                     'metode_pembayaran' => $validated['metode_pembayaran'],
                     'total_harga' => $finalTotal,
@@ -972,6 +1115,8 @@ class FrontendController extends Controller
                     ];
                 }
 
+                $fullAddress = trim($order->alamat . ', ' . $order->destination_label, ', ');
+
                 $params = [
                     'transaction_details' => [
                         'order_id' => $order->kode_order,
@@ -984,13 +1129,18 @@ class FrontendController extends Controller
                         'billing_address' => [
                             'first_name' => $order->nama_customer,
                             'phone' => $order->no_hp,
-                            'address' => $order->alamat,
+                            'address' => substr($fullAddress, 0, 200),
                         ],
                         'shipping_address' => [
                             'first_name' => $order->nama_customer,
                             'phone' => $order->no_hp,
-                            'address' => $order->alamat,
+                            'address' => substr($fullAddress, 0, 200),
                         ],
+                    ],
+                    // Batas waktu pembayaran: lewat 24 jam otomatis expire & pesanan dibatalkan via webhook
+                    'expiry' => [
+                        'unit' => 'hours',
+                        'duration' => 24,
                     ],
                 ];
 
@@ -999,7 +1149,15 @@ class FrontendController extends Controller
                     $order->snap_token = $snapToken;
                     $order->save();
                 } catch (Exception $midtransErr) {
-                    throw new Exception('Koneksi Midtrans Sandbox: ' . $midtransErr->getMessage() . '. Pastikan MIDTRANS_SERVER_KEY di file .env sudah diisi dengan Server Key akun Sandbox Midtrans Anda.');
+                    // Batalkan pesanan & kembalikan stok agar tidak ada pesanan "menggantung" tanpa token bayar
+                    DB::transaction(function () use ($order) {
+                        $order->status = 'dibatalkan';
+                        $order->cancelled_at = now();
+                        $order->catatan = trim(($order->catatan ?? '') . ' [Otomatis dibatalkan: gagal membuat transaksi Midtrans]');
+                        $order->save();
+                        OrderController::restoreOrderStockAndVoucher($order);
+                    });
+                    throw new Exception('Koneksi Midtrans Sandbox: ' . $midtransErr->getMessage() . '. Pesanan dibatalkan otomatis dan stok dikembalikan. Pastikan MIDTRANS_SERVER_KEY di file .env sudah benar, lalu coba lagi.');
                 }
             }
 
@@ -1008,7 +1166,8 @@ class FrontendController extends Controller
             $waMessage .= "Nomor Pesanan: *" . $order->kode_order . "*\n";
             $waMessage .= "Nama: *" . $order->nama_customer . "*\n";
             $waMessage .= "No HP: " . $order->no_hp . "\n";
-            $waMessage .= "Alamat: " . $order->alamat . "\n";
+            $waMessage .= "Alamat: " . $order->alamat . ", " . $order->destination_label . "\n";
+            $waMessage .= "Kurir: *" . $order->kurir . "* (" . ($order->estimasi ?? '-') . ")\n";
             $waMessage .= "Metode Bayar: *" . strtoupper($order->metode_pembayaran) . "*\n";
             $waMessage .= "Total Bayar: *Rp " . number_format($order->total_harga, 0, ',', '.') . "*\n\n";
             $waMessage .= "Mohon segera diproses ya. Terima kasih!";
@@ -1021,9 +1180,13 @@ class FrontendController extends Controller
                 'kode_order' => $order->kode_order,
                 'total_harga' => $order->total_harga,
                 'total_formatted' => 'Rp ' . number_format($order->total_harga, 0, ',', '.'),
+                'ongkir' => $order->ongkir,
+                'kurir' => $order->kurir,
                 'metode_pembayaran' => $order->metode_pembayaran,
                 'snap_token' => $snapToken,
                 'client_key' => config('midtrans.client_key'),
+                'track_url' => route('frontend.track', ['order' => $order->kode_order]),
+                'invoice_url' => route('frontend.order.invoice', ['kode_order' => $order->kode_order]),
                 'wa_url' => $waUrl,
             ]);
 
@@ -1055,26 +1218,7 @@ class FrontendController extends Controller
                 return response()->json(['message' => 'Order tidak ditemukan'], 404);
             }
 
-            $oldStatus = $order->status;
-
-            if ($transactionStatus == 'capture') {
-                if ($fraudStatus == 'challenge') {
-                    $order->status = 'pending';
-                } else if ($fraudStatus == 'accept') {
-                    $order->status = 'diproses';
-                }
-            } else if ($transactionStatus == 'settlement') {
-                $order->status = 'diproses';
-            } else if ($transactionStatus == 'pending') {
-                $order->status = 'pending';
-            } else if (in_array($transactionStatus, ['deny', 'expire', 'cancel'])) {
-                $order->status = 'dibatalkan';
-                if ($oldStatus !== 'dibatalkan') {
-                    OrderController::restoreOrderStockAndVoucher($order);
-                }
-            }
-
-            $order->save();
+            OrderController::applyMidtransStatus($order, $transactionStatus, $fraudStatus, $notification->payment_type ?? null);
 
             return response()->json(['message' => 'Status pesanan ' . $orderId . ' berhasil diselaraskan dengan Midtrans.']);
 
@@ -1126,9 +1270,21 @@ class FrontendController extends Controller
 
         DB::transaction(function () use ($order) {
             $order->status = 'dibatalkan';
+            $order->cancelled_at = now();
             $order->save();
             OrderController::restoreOrderStockAndVoucher($order);
         });
+
+        // Batalkan juga transaksi di Midtrans agar kode bayar (VA/QRIS) tidak bisa dibayar lagi
+        if ($order->metode_pembayaran === 'midtrans' && $order->snap_token) {
+            try {
+                Config::$serverKey = config('midtrans.server_key');
+                Config::$isProduction = (bool) config('midtrans.is_production', false);
+                \Midtrans\Transaction::cancel($order->kode_order);
+            } catch (\Throwable $e) {
+                // Transaksi belum dipilih metode bayarnya di Snap -> tidak perlu dibatalkan
+            }
+        }
 
         \RealRashid\SweetAlert\Facades\Alert::success('Pesanan Dibatalkan', 'Pesanan ' . $order->kode_order . ' telah dibatalkan dan stok produk telah dikembalikan.');
         return redirect()->route('frontend.my_orders');

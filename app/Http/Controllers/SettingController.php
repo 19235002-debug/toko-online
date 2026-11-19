@@ -29,9 +29,9 @@ class SettingController extends Controller
             'alamat_toko' => 'nullable|string',
             'rekening_bank' => 'nullable|string',
             'deskripsi_toko' => 'nullable|string',
-            'ongkir_reguler' => 'required|integer|min:0',
-            'ongkir_express' => 'required|integer|min:0',
-            'min_gratis_ongkir' => 'required|integer|min:0',
+            'ongkir_reguler' => 'nullable|integer|min:0',
+            'ongkir_express' => 'nullable|integer|min:0',
+            'min_gratis_ongkir' => 'nullable|integer|min:0',
         ], [
             'nama_toko.required' => 'Nama toko wajib diisi.',
             'no_whatsapp.required' => 'Nomor WhatsApp wajib diisi.',

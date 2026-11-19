@@ -27,6 +27,10 @@
             background: linear-gradient(90deg, #717fe0, #4f46e5) !important;
             height: 4px !important;
         }
+        .swal2-popup .swal2-file[style*="display: none"],
+        .swal2-popup.swal2-toast .swal2-file {
+            display: none !important;
+        }
     </style>
 
     <script>

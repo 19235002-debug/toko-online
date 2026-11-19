@@ -78,7 +78,7 @@ class OrderController extends Controller
      */
     public function updateStatus(Request $request, $id)
     {
-        $order = Order::where('id_order', $id)->firstOrFail();
+        $order = Order::with('items')->where('id_order', $id)->firstOrFail();
 
         $request->validate([
             'status' => 'required|in:pending,diproses,dikirim,selesai,dibatalkan',
@@ -88,14 +88,50 @@ class OrderController extends Controller
 
         $oldStatus = $order->status;
         $newStatus = $request->input('status');
+        $noResi = trim((string) $request->input('no_resi', ''));
+        $ekspedisi = trim((string) $request->input('ekspedisi', '')) ?: $order->ekspedisi;
 
-        // Simpan data ekspedisi & nomor resi pengiriman
-        $order->ekspedisi = $request->input('ekspedisi');
-        $order->no_resi = $request->input('no_resi');
+        // 1. Validasi alur status (tidak boleh lompat / mundur)
+        if (!$order->canTransitionTo($newStatus)) {
+            Alert::error('Status Tidak Valid', 'Status "' . ucfirst($oldStatus) . '" tidak dapat diubah menjadi "' . ucfirst($newStatus) . '".');
+            return redirect()->route('order.show', $id);
+        }
 
-        // Jika pesanan dibatalkan dari status non-dibatalkan, kembalikan stok barang, variasi, & kuota voucher
+        // 2. Pesanan Midtrans wajib lunas sebelum diproses
+        if ($newStatus === 'diproses' && $oldStatus === 'pending' && $order->metode_pembayaran === 'midtrans' && !$order->paid_at) {
+            self::syncOrderStatusWithMidtrans($order);
+            $order->refresh();
+            if ($order->status !== 'diproses') {
+                Alert::warning('Belum Dibayar', 'Pesanan ' . $order->kode_order . ' belum dibayar melalui Midtrans, sehingga belum dapat diproses.');
+                return redirect()->route('order.show', $id);
+            }
+            Alert::success('Sukses', 'Pembayaran terverifikasi Midtrans. Pesanan kini berstatus Diproses.');
+            return redirect()->route('order.show', $id);
+        }
+
+        // 3. Pengiriman wajib menyertakan nomor resi
+        if ($newStatus === 'dikirim' && $noResi === '') {
+            Alert::warning('Nomor Resi Wajib', 'Masukkan nomor resi pengiriman sebelum mengubah status menjadi Dikirim.');
+            return redirect()->route('order.show', $id);
+        }
+
+        $order->ekspedisi = $ekspedisi;
+        if ($noResi !== '' || in_array($newStatus, ['dikirim', 'selesai'], true)) {
+            $order->no_resi = $noResi !== '' ? $noResi : $order->no_resi;
+        }
+
         if ($newStatus === 'dibatalkan' && $oldStatus !== 'dibatalkan') {
             self::restoreOrderStockAndVoucher($order);
+            $order->cancelled_at = now();
+        }
+        if ($newStatus === 'dikirim' && $oldStatus !== 'dikirim') {
+            $order->shipped_at = now();
+        }
+        if ($newStatus === 'selesai' && $oldStatus !== 'selesai') {
+            $order->completed_at = now();
+            if ($order->metode_pembayaran === 'cod' && !$order->paid_at) {
+                $order->paid_at = now(); // COD dianggap lunas saat paket diterima
+            }
         }
 
         $order->status = $newStatus;
@@ -156,34 +192,46 @@ class OrderController extends Controller
 
         try {
             $status = \Midtrans\Transaction::status($order->kode_order);
-            $transactionStatus = is_object($status) ? ($status->transaction_status ?? null) : ($status['transaction_status'] ?? null);
-            $fraudStatus = is_object($status) ? ($status->fraud_status ?? null) : ($status['fraud_status'] ?? null);
+            $get = fn($key) => is_object($status) ? ($status->{$key} ?? null) : ($status[$key] ?? null);
 
-            $oldStatus = $order->status;
-
-            if ($transactionStatus == 'capture') {
-                if ($fraudStatus == 'challenge') {
-                    $order->status = 'pending';
-                } else if ($fraudStatus == 'accept') {
-                    $order->status = 'diproses';
-                }
-            } else if ($transactionStatus == 'settlement') {
-                $order->status = 'diproses';
-            } else if ($transactionStatus == 'pending') {
-                $order->status = 'pending';
-            } else if (in_array($transactionStatus, ['deny', 'expire', 'cancel'])) {
-                $order->status = 'dibatalkan';
-                if ($oldStatus !== 'dibatalkan') {
-                    self::restoreOrderStockAndVoucher($order);
-                }
-            }
-
-            if ($order->status !== $oldStatus) {
-                $order->save();
-                return true;
-            }
+            return self::applyMidtransStatus($order, $get('transaction_status'), $get('fraud_status'), $get('payment_type'));
         } catch (Exception $e) {
             // Abaikan jika order belum terdaftar di Midtrans
+        }
+
+        return false;
+    }
+
+    /**
+     * Terapkan status transaksi Midtrans ke pesanan (dipakai webhook & sinkronisasi manual).
+     * Mengembalikan true jika status pesanan berubah.
+     */
+    public static function applyMidtransStatus(Order $order, ?string $transactionStatus, ?string $fraudStatus = null, ?string $paymentType = null): bool
+    {
+        // Pesanan yang sudah lewat tahap pembayaran tidak boleh diubah oleh notifikasi Midtrans yang terlambat
+        if (!in_array($order->status, ['pending'], true)) {
+            return false;
+        }
+
+        $oldStatus = $order->status;
+        $paid = ($transactionStatus === 'settlement')
+            || ($transactionStatus === 'capture' && $fraudStatus !== 'challenge');
+
+        if ($paid) {
+            $order->status = 'diproses';
+            $order->paid_at = $order->paid_at ?: now();
+            if ($paymentType) {
+                $order->payment_type = $paymentType;
+            }
+        } elseif (in_array($transactionStatus, ['deny', 'expire', 'cancel', 'failure'], true)) {
+            $order->status = 'dibatalkan';
+            $order->cancelled_at = now();
+            self::restoreOrderStockAndVoucher($order);
+        }
+
+        if ($order->status !== $oldStatus) {
+            $order->save();
+            return true;
         }
 
         return false;

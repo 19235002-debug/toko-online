@@ -30,7 +30,10 @@ Route::get('/frontend/product/{id}', [FrontendController::class, 'show'])->name(
 Route::get('/lacak-pesanan', [FrontendController::class, 'trackOrder'])->name('frontend.track');
 Route::post('/lacak-pesanan/{kode_order}/confirm', [FrontendController::class, 'confirmReceived'])->name('frontend.track.confirm');
 Route::post('/review/store', [FrontendController::class, 'storeReview'])->name('frontend.review.store');
+Route::get('/voucher/available', [FrontendController::class, 'availableVouchers'])->name('frontend.voucher.available')->middleware('auth');
 Route::post('/voucher/check', [FrontendController::class, 'checkVoucher'])->name('frontend.voucher.check')->middleware('auth');
+Route::get('/shipping/destinations', [FrontendController::class, 'shippingDestinations'])->name('frontend.shipping.destinations')->middleware('auth');
+Route::post('/shipping/cost', [FrontendController::class, 'shippingCost'])->name('frontend.shipping.cost')->middleware('auth');
 Route::post('/checkout/validate-stock', [FrontendController::class, 'validateCartStock'])->name('frontend.checkout.validateStock')->middleware('auth');
 Route::post('/checkout', [FrontendController::class, 'checkout'])->name('frontend.checkout')->middleware('auth');
 

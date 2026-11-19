@@ -88,6 +88,9 @@
                 No. HP/WA: {{ $order->no_hp }}<br>
                 Alamat Pengiriman:<br>
                 {{ $order->alamat }}
+                @if($order->destination_label)
+                    <br><small style="color: #555;">{{ $order->destination_label }}</small>
+                @endif
             </td>
             <td style="width: 50%;" class="text-right">
                 <strong>Status Pesanan:</strong> <span style="text-transform: uppercase;">{{ $order->status }}</span><br>

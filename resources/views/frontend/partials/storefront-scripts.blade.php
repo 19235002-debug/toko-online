@@ -308,42 +308,22 @@
 			});
 		}
 
-		@php
-			$jsShipSetting = \App\Models\Setting::getSettings();
-		@endphp
-		window.SHIPPING_RATES = {
-			reguler: {{ intval($jsShipSetting->ongkir_reguler ?? 15000) }},
-			express: {{ intval($jsShipSetting->ongkir_express ?? 30000) }},
-			minFree: {{ intval($jsShipSetting->min_gratis_ongkir ?? 300000) }}
-		};
+		function hasSelectedCourier() {
+			return !!($('#checkout_destination_id').val() && $('#checkout_courier_code').val() && $('#checkout_courier_service').val());
+		}
 
 		function recalculateCheckoutTotals() {
 			var subtotal = window.currentCheckoutSubtotal || 0;
 			var discount = window.appliedVoucherDiscount || 0;
-			var kurir = $('input[name="kurir"]:checked').val() || 'reguler';
-			var rates = window.SHIPPING_RATES || { reguler: 15000, express: 30000, minFree: 300000 };
-			var ongkir = 0;
+			var selected = hasSelectedCourier();
+			var ongkir = selected ? (parseInt($('#checkout_ongkir_preview').val(), 10) || 0) : 0;
 
-			if (kurir === 'express') {
-				ongkir = rates.express;
+			var $ongkirEl = $('#checkout-summary-ongkir');
+			if (!selected) {
+				$ongkirEl.removeClass('text-dark').addClass('text-muted').text('Pilih kurir');
+				$('#checkout-summary-kurir').text('');
 			} else {
-				ongkir = subtotal >= rates.minFree ? 0 : rates.reguler;
-			}
-
-			if ($('#kurir-reguler-price-label').length) {
-				$('#kurir-reguler-price-label').text(
-					subtotal >= rates.minFree
-						? 'Gratis Ongkir'
-						: (formatRupiah(rates.reguler) + ' (Gratis ≥ ' + formatRupiah(rates.minFree) + ')')
-				);
-			}
-
-			if ($('#checkout-summary-ongkir').length) {
-				if (ongkir === 0) {
-					$('#checkout-summary-ongkir').html('<span class="badge badge-success px-2 py-1" style="font-size: 10.5px;">Gratis Ongkir</span>');
-				} else {
-					$('#checkout-summary-ongkir').text(formatRupiah(ongkir));
-				}
+				$ongkirEl.removeClass('text-muted').addClass('text-dark').text(formatRupiah(ongkir));
 			}
 
 			var totalAkhir = Math.max(0, subtotal - discount) + ongkir;
@@ -378,6 +358,7 @@
 			});
 
 			window.currentCheckoutSubtotal = totalPrice;
+			window.currentCheckoutTotalQty = totalQty;
 			window.appliedVoucherCode = null;
 			window.appliedVoucherDiscount = 0;
 
@@ -385,12 +366,53 @@
 			$('#voucher-feedback').hide().text('');
 			$('#checkout-summary-discount-row').attr('style', 'display: none !important;');
 
+			resetRajaOngkirSelection(true);
+
 			$('#checkout-summary-total-qty').text(totalQty + ' pcs');
 			$('#checkout-summary-subtotal').text(formatRupiah(totalPrice));
 			recalculateCheckoutTotals();
+			loadAvailableVouchers(totalPrice);
 
 			$('.js-panel-cart').removeClass('show-header-cart');
 			$('#modalCheckout').modal('show');
+		}
+
+		function loadAvailableVouchers(subtotal) {
+			var $wrap = $('#checkout-available-vouchers-wrap');
+			var $list = $('#checkout-available-vouchers-list');
+			$list.html('<div class="text-muted small py-1"><i class="fa fa-spinner fa-spin mr-1"></i> Memuat voucher...</div>');
+			$wrap.show();
+
+			$.get('{{ route("frontend.voucher.available") }}', { subtotal: subtotal }, function(res) {
+				if (!res || !res.vouchers || res.vouchers.length === 0) {
+					$wrap.hide();
+					return;
+				}
+				var html = '';
+				res.vouchers.forEach(function(v) {
+					var minInfo = v.minimal_belanja > 0 ? 'Min. belanja ' + formatRupiah(v.minimal_belanja) : 'Tanpa minimal belanja';
+					var expInfo = v.tanggal_selesai ? ' • s/d ' + escapeHtml(v.tanggal_selesai) : '';
+					var actionBtn = v.eligible
+						? '<button type="button" onclick="applyVoucher(\'' + escapeHtml(v.kode_voucher) + '\')" class="btn btn-xs btn-primary font-weight-bold px-2 py-1" style="border-radius: 6px; font-size: 11px; white-space: nowrap;">Pakai</button>'
+						: '<span class="badge badge-light border text-muted" style="font-size: 10px; white-space: nowrap;">Tambah ' + formatRupiah(v.kurang) + '</span>';
+
+					html +=
+						'<div class="d-flex justify-content-between align-items-center p-2 border rounded" style="background: #f8fafc;">' +
+							'<div style="min-width: 0; padding-right: 8px;">' +
+								'<div class="d-flex align-items-center" style="gap: 6px;">' +
+									'<span class="badge badge-primary" style="font-size: 10.5px;">' + escapeHtml(v.kode_voucher) + '</span>' +
+									'<strong class="text-dark" style="font-size: 11.5px;">' + escapeHtml(v.label_diskon) + '</strong>' +
+								'</div>' +
+								'<div class="text-muted text-truncate" style="font-size: 10.5px; margin-top: 2px;">' + minInfo + expInfo + '</div>' +
+							'</div>' +
+							actionBtn +
+						'</div>';
+				});
+				$list.html(html);
+				$wrap.show();
+			}).fail(function() {
+				$wrap.hide();
+			});
 		}
 
 		function copyVoucherCode(code) {
@@ -453,6 +475,178 @@
 			recalculateCheckoutTotals();
 		}
 
+		var receiptPollTimer = null;
+		var receiptAutoCloseTimer = null;
+
+		function stopReceiptPolling() {
+			if (receiptPollTimer) {
+				clearInterval(receiptPollTimer);
+				receiptPollTimer = null;
+			}
+		}
+
+		function stopReceiptAutoClose() {
+			if (receiptAutoCloseTimer) {
+				clearTimeout(receiptAutoCloseTimer);
+				receiptAutoCloseTimer = null;
+			}
+			$('#receipt-progress-wrap').hide();
+			$('#receipt-progress-bar').css({ transition: 'none', width: '100%' });
+		}
+
+		function startReceiptAutoClose() {
+			stopReceiptAutoClose();
+			var $wrap = $('#receipt-progress-wrap');
+			var $bar = $('#receipt-progress-bar');
+			$bar.css({ transition: 'none', width: '100%' });
+			$wrap.show();
+			// Trigger reflow agar animasi transisi 3 detik berjalan mulus dari 100% ke 0%
+			if ($bar[0]) void $bar[0].offsetWidth;
+			$bar.css({ transition: 'width 3s linear', width: '0%' });
+
+			receiptAutoCloseTimer = setTimeout(function() {
+				$('#modalOrderReceipt').modal('hide');
+			}, 3000);
+		}
+
+		function startSnapLivePolling(res) {
+			stopReceiptPolling();
+			if (!res || !res.kode_order) return;
+			receiptPollTimer = setInterval(function() {
+				$.post('/midtrans/sync/' + res.kode_order, { _token: '{{ csrf_token() }}' }, function(syncRes) {
+					if (syncRes && syncRes.status === 'diproses') {
+						stopReceiptPolling();
+						try {
+							if (window.snap && typeof window.snap.hide === 'function') {
+								window.snap.hide();
+							}
+						} catch (e) {}
+						showModernOrderReceipt(res, 'paid');
+					}
+				});
+			}, 3500);
+		}
+
+		function manualCheckReceiptStatus() {
+			var res = window.lastCheckoutRes;
+			if (!res || !res.kode_order) return;
+			var $btn = $('#receipt-recheck-btn');
+			$btn.prop('disabled', true).text('Mengecek...');
+			$.post('/midtrans/sync/' + res.kode_order, { _token: '{{ csrf_token() }}' }, function(syncRes) {
+				$btn.prop('disabled', false).text('Cek Status');
+				if (syncRes && syncRes.status === 'diproses') {
+					stopReceiptPolling();
+					showModernOrderReceipt(res, 'paid');
+				} else if (syncRes && syncRes.status === 'dibatalkan') {
+					stopReceiptPolling();
+					$('#modalOrderReceipt').modal('hide');
+					swal("Pesanan Dibatalkan", "Transaksi dibatalkan atau kedaluwarsa.", "warning");
+				}
+			}).fail(function() {
+				$btn.prop('disabled', false).text('Cek Status');
+			});
+		}
+
+		function reopenReceiptSnap() {
+			var res = window.lastCheckoutRes;
+			if (!res || !res.snap_token || typeof window.snap === 'undefined') return;
+			$('#modalOrderReceipt').modal('hide');
+			openSnapPayment(res);
+		}
+
+		function openSnapPayment(res) {
+			startSnapLivePolling(res);
+			window.snap.pay(res.snap_token, {
+				onSuccess: function(result) {
+					stopReceiptPolling();
+					$.post('/midtrans/sync/' + res.kode_order, { _token: '{{ csrf_token() }}' });
+					showModernOrderReceipt(res, 'paid');
+				},
+				onPending: function(result) {
+					// Tunggu sinkronisasi selesai sebelum menentukan status modal
+					$.post('/midtrans/sync/' + res.kode_order, { _token: '{{ csrf_token() }}' }, function(syncRes) {
+						showModernOrderReceipt(res, (syncRes && syncRes.status === 'diproses') ? 'paid' : 'pending');
+					}).fail(function() {
+						showModernOrderReceipt(res, 'pending');
+					});
+				},
+				onError: function(result) {
+					stopReceiptPolling();
+					swal({
+						title: "Pembayaran Gagal",
+						text: "Pembayaran untuk pesanan " + res.kode_order + " gagal diproses.",
+						icon: "error"
+					});
+				},
+				onClose: function() {
+					// Jika sudah terbayar di simulator/mobile banking, langsung tampilkan sukses
+					$.post('/midtrans/sync/' + res.kode_order, { _token: '{{ csrf_token() }}' }, function(syncRes) {
+						showModernOrderReceipt(res, (syncRes && syncRes.status === 'diproses') ? 'paid' : 'pending');
+					}).fail(function() {
+						showModernOrderReceipt(res, 'pending');
+					});
+				}
+			});
+		}
+
+		function showModernOrderReceipt(res, state) {
+			window.lastCheckoutRes = res;
+			var $hero = $('#receipt-hero');
+			var $iconWrap = $('#receipt-icon-wrap');
+			var $icon = $('#receipt-icon');
+			var $badge = $('#receipt-badge');
+			var $sub = $('#receipt-subtitle');
+			var $pendingBar = $('#receipt-pending-bar');
+			var $reopenBtn = $('#receipt-reopen-snap-btn');
+
+			if (state === 'paid') {
+				stopReceiptPolling();
+				$pendingBar.hide();
+				$reopenBtn.hide();
+				$hero.css('background', 'linear-gradient(135deg, #ecfdf5 0%, #eef2ff 100%)');
+				$iconWrap.css({ background: '#10b981', boxShadow: '0 12px 28px rgba(16, 185, 129, 0.3)' });
+				$icon.attr('class', 'fa fa-check');
+				$badge.html('<span class="badge badge-success px-3 py-1" style="border-radius: 999px; font-size: 11.5px;">Pembayaran Berhasil</span>');
+				$sub.text('Pembayaran diterima. Pesanan Anda segera dikemas & dikirim.');
+				startReceiptAutoClose();
+			} else if (state === 'cod') {
+				stopReceiptPolling();
+				$pendingBar.hide();
+				$reopenBtn.hide();
+				$hero.css('background', 'linear-gradient(135deg, #eff6ff 0%, #eef2ff 100%)');
+				$iconWrap.css({ background: '#4f46e5', boxShadow: '0 12px 28px rgba(79, 70, 229, 0.28)' });
+				$icon.attr('class', 'fa fa-check');
+				$badge.html('<span class="badge badge-primary px-3 py-1" style="border-radius: 999px; font-size: 11.5px;">Pesanan COD Dibuat</span>');
+				$sub.text('Bayar tunai saat paket tiba. Menunggu konfirmasi penjual.');
+				startReceiptAutoClose();
+			} else {
+				stopReceiptAutoClose();
+				$pendingBar.show();
+				$reopenBtn.toggle(!!res.snap_token);
+				$hero.css('background', 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)');
+				$iconWrap.css({ background: '#f59e0b', boxShadow: '0 12px 28px rgba(245, 158, 11, 0.28)' });
+				$icon.attr('class', 'fa fa-clock-o');
+				$badge.html('<span class="badge badge-warning text-white px-3 py-1" style="border-radius: 999px; font-size: 11.5px;">Menunggu Pembayaran</span>');
+				$sub.text('Selesaikan pembayaran dalam 24 jam. Status diperbarui otomatis.');
+				startSnapLivePolling(res);
+			}
+
+			$('#receipt-amount').text(res.total_formatted || 'Rp 0');
+			$('#receipt-kode').text(res.kode_order || '-');
+			$('#receipt-metode').text((res.metode_pembayaran || '-').toUpperCase());
+			$('#receipt-kurir').text(res.kurir || '-');
+			$('#receipt-track-btn').attr('href', res.track_url || ('/lacak-pesanan?order=' + encodeURIComponent(res.kode_order || '')));
+			$('#receipt-invoice-btn').attr('href', res.invoice_url || ('/pesanan-saya/' + encodeURIComponent(res.kode_order || '') + '/invoice'));
+			$('#receipt-wa-btn').attr('href', res.wa_url || '#');
+
+			$('#modalOrderReceipt').modal('show');
+		}
+
+		$(document).on('hidden.bs.modal', '#modalOrderReceipt', function() {
+			stopReceiptPolling();
+			stopReceiptAutoClose();
+		});
+
 		function submitCheckoutOrder(e) {
 			e.preventDefault();
 			var cart = getCart();
@@ -469,6 +663,12 @@
 				return;
 			}
 
+			if (!hasSelectedCourier()) {
+				swal("Pengiriman Belum Dipilih", "Silakan pilih kecamatan / kota tujuan lalu pilih layanan kurir pengiriman terlebih dahulu.", "warning");
+				$('#ro-destination-input').focus();
+				return;
+			}
+
 			var $btn = $('#btn-submit-checkout');
 			var originalBtnHtml = $btn.html();
 			$btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin m-r-5"></i> Memproses...');
@@ -479,7 +679,10 @@
 				no_hp: $('#checkout_no_hp').val(),
 				alamat: $('#checkout_alamat').val(),
 				metode_pembayaran: $('input[name="metode_pembayaran"]:checked').val(),
-				kurir: $('input[name="kurir"]:checked').val() || 'reguler',
+				destination_id: $('#checkout_destination_id').val(),
+				destination_label: $('#checkout_destination_label').val(),
+				courier_code: $('#checkout_courier_code').val(),
+				courier_service: $('#checkout_courier_service').val(),
 				catatan: $('#checkout_catatan').val(),
 				kode_voucher: window.appliedVoucherCode || '',
 				cart_items: JSON.stringify(cart)
@@ -499,106 +702,10 @@
 						$('#formCheckout')[0].reset();
 
 						if (res.metode_pembayaran === 'midtrans' && res.snap_token && typeof window.snap !== 'undefined') {
-							window.snap.pay(res.snap_token, {
-								onSuccess: function(result) {
-									$.post('/midtrans/sync/' + res.kode_order);
-
-									swal({
-										title: "Pembayaran Berhasil!",
-										text: "Terima kasih, pembayaran pesanan " + res.kode_order + " telah diterima secara otomatis.",
-										icon: "success",
-										timer: 3000,
-										buttons: {
-											cancel: {
-												text: "Tutup",
-												value: false,
-												visible: true,
-												className: "btn btn-secondary btn-sm"
-											},
-											confirm: {
-												text: "WhatsApp Admin (Opsional)",
-												value: true,
-												visible: true,
-												className: "btn btn-success btn-sm"
-											}
-										}
-									}).then(function(openWa) {
-										if (openWa === true && res.wa_url) {
-											window.open(res.wa_url, '_blank');
-										}
-									});
-								},
-								onPending: function(result) {
-									swal({
-										title: "Menunggu Pembayaran",
-										text: "Pesanan " + res.kode_order + " telah dibuat. Silakan selesaikan pembayaran sesuai instruksi Midtrans.",
-										icon: "info",
-										buttons: {
-											cancel: "Tutup",
-											confirm: {
-												text: "Konfirmasi WhatsApp",
-												className: "btn btn-success"
-											}
-										}
-									}).then(function(openWa) {
-										if (openWa && res.wa_url) {
-											window.open(res.wa_url, '_blank');
-										}
-									});
-								},
-								onError: function(result) {
-									swal({
-										title: "Pembayaran Gagal",
-										text: "Pembayaran untuk pesanan " + res.kode_order + " gagal diproses.",
-										icon: "error"
-									});
-								},
-								onClose: function() {
-									$.post('/midtrans/sync/' + res.kode_order);
-
-									swal({
-										title: "Pesanan Tercatat",
-										text: "Pop-up pembayaran ditutup. Pesanan " + res.kode_order + " tetap tercatat dan sistem otomatis memantau status pembayarannya.",
-										icon: "warning",
-										buttons: {
-											cancel: "Tutup",
-											confirm: {
-												text: "Hubungi Admin",
-												className: "btn btn-success"
-											}
-										}
-									}).then(function(openWa) {
-										if (openWa && res.wa_url) {
-											window.open(res.wa_url, '_blank');
-										}
-									});
-								}
-							});
+							window.lastCheckoutRes = res;
+							openSnapPayment(res);
 						} else {
-							swal({
-								title: "Pesanan Berhasil Dibuat!",
-								text: "Nomor Pesanan: " + res.kode_order + "\nTotal: " + res.total_formatted,
-								icon: "success",
-								timer: 3000,
-								buttons: {
-									cancel: {
-										text: "Tutup",
-										value: false,
-										visible: true,
-										className: "btn btn-secondary btn-sm"
-									},
-									confirm: {
-										text: "WhatsApp Admin (Opsional)",
-										value: true,
-										visible: true,
-										className: "btn btn-success btn-sm"
-									}
-								}
-							}).then(function(openWa) {
-								if (openWa === true && res.wa_url) {
-									window.open(res.wa_url, '_blank');
-								}
-							});
+							showModernOrderReceipt(res, 'cod');
 						}
 					} else {
 						swal("Gagal Memproses", res.message || "Terjadi kesalahan saat memproses pesanan.", "error");
@@ -782,6 +889,8 @@
 			$('#modal-product-qty').val(1);
 			$('#modal-gallery-thumbnails').empty().hide();
 			$('#modal-variants-section').hide();
+			$('#modal-promo-countdown-wrap').hide();
+			$('#modal-promo-countdown').attr('data-promo-end', '');
 
 			$('#review_barang_id').val(currentModalProduct.id);
 			$('#modal-write-review-box').hide();
@@ -801,6 +910,11 @@
 					);
 					if (res.promo_selesai) {
 						$('#modal-product-desc').append('<br><span class="badge badge-light border text-danger mt-1"><i class="fa fa-clock mr-1"></i> Promo berakhir: ' + escapeHtml(res.promo_selesai) + '</span>');
+					}
+					if (res.promo_selesai_iso) {
+						$('#modal-promo-countdown').attr('data-promo-end', res.promo_selesai_iso);
+						$('#modal-promo-countdown-wrap').show();
+						updatePromoCountdowns();
 					}
 				}
 
@@ -833,12 +947,14 @@
 						var $colOpts = $('#modal-color-options');
 						$colOpts.empty();
 						res.warna_list.forEach(function(col) {
-							var $btn = $('<button type="button" class="var-pill js-color-pill">' + escapeHtml(col) + '</button>');
+							var $btn = $('<button type="button" class="var-pill js-color-pill"></button>').attr('data-val', col).text(col);
 							$btn.on('click', function() {
+								if ($(this).prop('disabled')) return;
 								$('.js-color-pill').removeClass('active');
 								$(this).addClass('active');
 								selectedColor = col;
 								$('#selected-color-label').text(col);
+								syncVariantPillStates('color');
 								onVariantSelectionChanged();
 							});
 							$colOpts.append($btn);
@@ -853,12 +969,14 @@
 						var $szOpts = $('#modal-size-options');
 						$szOpts.empty();
 						res.ukuran_list.forEach(function(sz) {
-							var $btn = $('<button type="button" class="var-pill js-size-pill">' + escapeHtml(sz) + '</button>');
+							var $btn = $('<button type="button" class="var-pill js-size-pill"></button>').attr('data-val', sz).text(sz);
 							$btn.on('click', function() {
+								if ($(this).prop('disabled')) return;
 								$('.js-size-pill').removeClass('active');
 								$(this).addClass('active');
 								selectedSize = sz;
 								$('#selected-size-label').text(sz);
+								syncVariantPillStates('size');
 								onVariantSelectionChanged();
 							});
 							$szOpts.append($btn);
@@ -867,9 +985,12 @@
 						$('#modal-size-wrapper').hide();
 					}
 
-					$('#modal-variant-info').html('<span class="text-info"><i class="fa fa-info-circle mr-1"></i> Silakan pilih variasi warna/ukuran di atas</span>').show();
+					syncVariantPillStates(false);
+					$('#modal-variant-info').html('<span class="text-info"><i class="fa fa-info-circle mr-1"></i> Silakan pilih variasi warna/ukuran yang tersedia</span>').show();
+					setCartButtonAvailability(currentModalProduct.stok > 0);
 				} else {
 					$('#modal-variants-section').hide();
+					setCartButtonAvailability(currentModalProduct.stok > 0);
 				}
 
 				var avg = parseFloat(res.avg_rating) || 0;
@@ -896,6 +1017,85 @@
 			$('.js-modal1').addClass('show-modal1');
 		});
 
+		function setCartButtonAvailability(isAvailable, labelText) {
+			var $cartBtn = $('.quickview-btn-cart');
+			if (isAvailable) {
+				$cartBtn.prop('disabled', false).html('<i class="zmdi zmdi-shopping-cart fs-18"></i> ' + (labelText || 'Tambah ke Keranjang'));
+			} else {
+				$cartBtn.prop('disabled', true).html('<i class="fa fa-ban mr-1"></i> ' + (labelText || 'Stok Habis'));
+			}
+		}
+
+		function syncVariantPillStates(changedAxis) {
+			if (!currentProductVariants || currentProductVariants.length === 0) return;
+
+			var firstValidColor = null;
+			var selectedColorStillValid = false;
+
+			$('.js-color-pill').each(function() {
+				var col = $(this).attr('data-val');
+				var hasStock = currentProductVariants.some(function(v) {
+					var matchSize = (changedAxis === 'size' && selectedSize) ? (v.ukuran === selectedSize) : true;
+					return matchSize && v.warna === col && parseInt(v.stok, 10) > 0;
+				});
+				$(this).prop('disabled', !hasStock).toggleClass('is-unavailable', !hasStock);
+				if (hasStock) {
+					if (!firstValidColor) firstValidColor = col;
+					if (selectedColor === col) selectedColorStillValid = true;
+				}
+			});
+
+			if (changedAxis === 'size') {
+				if (selectedColor && !selectedColorStillValid) {
+					selectedColor = null;
+					$('.js-color-pill').removeClass('active');
+					$('#selected-color-label').text('Pilih warna');
+				}
+				if (!selectedColor && firstValidColor) {
+					selectedColor = firstValidColor;
+					$('.js-color-pill').each(function() {
+						if ($(this).attr('data-val') === firstValidColor) {
+							$(this).addClass('active');
+						}
+					});
+					$('#selected-color-label').text(firstValidColor);
+				}
+			}
+
+			var firstValidSize = null;
+			var selectedSizeStillValid = false;
+
+			$('.js-size-pill').each(function() {
+				var sz = $(this).attr('data-val');
+				var hasStock = currentProductVariants.some(function(v) {
+					var matchCol = (changedAxis === 'color' && selectedColor) ? (v.warna === selectedColor) : true;
+					return matchCol && v.ukuran === sz && parseInt(v.stok, 10) > 0;
+				});
+				$(this).prop('disabled', !hasStock).toggleClass('is-unavailable', !hasStock);
+				if (hasStock) {
+					if (!firstValidSize) firstValidSize = sz;
+					if (selectedSize === sz) selectedSizeStillValid = true;
+				}
+			});
+
+			if (changedAxis === 'color') {
+				if (selectedSize && !selectedSizeStillValid) {
+					selectedSize = null;
+					$('.js-size-pill').removeClass('active');
+					$('#selected-size-label').text('Pilih ukuran');
+				}
+				if (!selectedSize && firstValidSize) {
+					selectedSize = firstValidSize;
+					$('.js-size-pill').each(function() {
+						if ($(this).attr('data-val') === firstValidSize) {
+							$(this).addClass('active');
+						}
+					});
+					$('#selected-size-label').text(firstValidSize);
+				}
+			}
+		}
+
 		function onVariantSelectionChanged() {
 			if (!currentProductVariants || currentProductVariants.length === 0) return;
 
@@ -905,11 +1105,13 @@
 			if (hasColorAttr && !selectedColor) {
 				$('#modal-variant-info').html('<span class="text-muted"><i class="fa fa-info-circle mr-1"></i> Silakan pilih warna</span>').show();
 				currentSelectedVariant = null;
+				setCartButtonAvailability(currentModalProduct.stok > 0);
 				return;
 			}
 			if (hasSizeAttr && !selectedSize) {
 				$('#modal-variant-info').html('<span class="text-muted"><i class="fa fa-info-circle mr-1"></i> Silakan pilih ukuran</span>').show();
 				currentSelectedVariant = null;
+				setCartButtonAvailability(currentModalProduct.stok > 0);
 				return;
 			}
 
@@ -926,12 +1128,15 @@
 
 				if (matched.stok > 0) {
 					$('#modal-variant-info').html('<span class="text-success font-weight-bold"><i class="fa fa-check mr-1"></i> Stok Varian: ' + matched.stok + ' unit tersedia</span>').show();
+					setCartButtonAvailability(true);
 				} else {
 					$('#modal-variant-info').html('<span class="text-danger font-weight-bold"><i class="fa fa-times-circle mr-1"></i> Maaf, varian ini sedang habis</span>').show();
+					setCartButtonAvailability(false, 'Stok Habis');
 				}
 			} else {
 				currentSelectedVariant = null;
-				$('#modal-variant-info').html('<span class="text-warning font-weight-bold"><i class="fa fa-exclamation-triangle mr-1"></i> Kombinasi variasi ini tidak tersedia</span>').show();
+				$('#modal-variant-info').html('<span class="text-muted"><i class="fa fa-info-circle mr-1"></i> Kombinasi variasi tidak tersedia</span>').show();
+				setCartButtonAvailability(false, 'Tidak Tersedia');
 			}
 		}
 
@@ -1269,6 +1474,13 @@
 								' <del class="text-muted font-weight-normal ml-2" style="font-size: 0.95rem;">' + formatRupiah(res.harga_asli) + '</del>' +
 								' <span class="badge badge-danger ml-1" style="font-size: 0.75rem; vertical-align: middle;">-' + res.diskon_persen + '%</span>'
 							);
+							if (res.promo_selesai_iso) {
+								$('#modal-promo-countdown').attr('data-promo-end', res.promo_selesai_iso);
+								$('#modal-promo-countdown-wrap').show();
+								updatePromoCountdowns();
+							}
+						} else {
+							$('#modal-promo-countdown-wrap').hide();
 						}
 						window.currentProductCanReview = !!res.can_review;
 						window.currentProductReviewMsg = res.review_message || '';
@@ -1300,5 +1512,166 @@
 					updateWishlistUI();
 				});
 			}
+
+			updatePromoCountdowns();
+			setInterval(updatePromoCountdowns, 1000);
+			initRajaOngkirCheckout();
 		});
+
+		var roSearchTimer = null;
+		function initRajaOngkirCheckout() {
+			$(document).on('input', '#ro-destination-input', function() {
+				var q = ($(this).val() || '').trim();
+				var $dd = $('#ro-destination-dropdown');
+				if (roSearchTimer) clearTimeout(roSearchTimer);
+				if (q.length === 0) {
+					$dd.hide().empty();
+					return;
+				}
+				if (q.length < 3) {
+					$dd.html('<div class="list-group-item small text-muted py-2">Ketik minimal 3 huruf (kelurahan, kecamatan, atau kode pos)...</div>').show();
+					return;
+				}
+				roSearchTimer = setTimeout(function() {
+					$dd.html('<div class="list-group-item small text-muted py-2">Mencari wilayah...</div>').show();
+					$.get('{{ route("frontend.shipping.destinations") }}', { q: q }, function(res) {
+						if (!res || !res.destinations || res.destinations.length === 0) {
+							$dd.html('<div class="list-group-item small text-muted py-2">Wilayah tidak ditemukan. Coba nama kelurahan, kecamatan, atau kode pos lain.</div>');
+							return;
+						}
+						var html = '';
+						res.destinations.forEach(function(d) {
+							html += '<a href="javascript:void(0);" class="list-group-item list-group-item-action py-2 px-3 small" onclick="selectRajaOngkirDestination(' + parseInt(d.id, 10) + ', \'' + escapeHtml(d.label).replace(/'/g, "\\'") + '\')">' +
+								escapeHtml(d.label) +
+							'</a>';
+						});
+						$dd.html(html).show();
+					}).fail(function() {
+						$dd.hide();
+					});
+				}, 300);
+			});
+
+			$(document).on('click', function(e) {
+				if (!$(e.target).closest('#ro-destination-input, #ro-destination-dropdown').length) {
+					$('#ro-destination-dropdown').hide();
+				}
+			});
+		}
+
+		function resetRajaOngkirSelection(clearInput) {
+			if (clearInput) {
+				$('#ro-destination-input').val('');
+				$('#ro-selected-dest-badge').hide().text('');
+				$('#checkout_destination_id').val('');
+				$('#checkout_destination_label').val('');
+			}
+			$('#ro-destination-dropdown').hide().empty();
+			$('#ro-courier-options-wrap').hide();
+			$('#ro-courier-options-list').empty();
+			$('#checkout_courier_code').val('');
+			$('#checkout_courier_service').val('');
+			$('#checkout_ongkir_preview').val('0');
+			$('#checkout-summary-kurir').text('');
+			$('#ro-shipping-hint').attr('style', 'display: flex !important; background: #f8fafc; border: 1px dashed #cbd5e1; gap: 8px; font-size: 11.5px; color: #64748b;').addClass('p-2 rounded');
+			recalculateCheckoutTotals();
+		}
+
+		function selectRajaOngkirDestination(destId, destLabel) {
+			resetRajaOngkirSelection(false);
+			$('#ro-destination-input').val(destLabel);
+			$('#checkout_destination_id').val(destId);
+			$('#checkout_destination_label').val(destLabel);
+			$('#ro-selected-dest-badge').text('Tujuan dipilih: ' + destLabel).show();
+			$('#ro-shipping-hint').attr('style', 'display: none !important;');
+
+			var $wrap = $('#ro-courier-options-wrap');
+			var $list = $('#ro-courier-options-list');
+			$list.html('<div class="text-muted small py-2">Menghitung tarif kurir...</div>');
+			$wrap.show();
+
+			$.post('{{ route("frontend.shipping.cost") }}', {
+				_token: $('input[name="_token"]').val() || '{{ csrf_token() }}',
+				destination_id: destId,
+				total_qty: window.currentCheckoutTotalQty || 1
+			}, function(res) {
+				if (!res || !res.options || res.options.length === 0) {
+					$list.html('<div class="text-danger small py-1">Layanan kurir tidak tersedia untuk tujuan ini. Coba wilayah lain.</div>');
+					return;
+				}
+				var beratKg = ((res.weight_grams || 0) / 1000).toFixed(2).replace(/\.?0+$/, '');
+				var html = '<div class="text-muted mb-1" style="font-size: 10.5px;">Estimasi berat paket: ' + beratKg + ' kg — pilih layanan:</div>';
+				res.options.forEach(function(opt) {
+					html +=
+						'<label class="ro-courier-option d-flex justify-content-between align-items-center p-2 border rounded mb-0" style="background: #f8fafc; cursor: pointer;">' +
+							'<div class="d-flex align-items-center" style="gap: 8px;">' +
+								'<input type="radio" name="ro_courier" ' +
+									'data-code="' + escapeHtml(opt.code) + '" ' +
+									'data-service="' + escapeHtml(opt.service) + '" ' +
+									'data-cost="' + parseInt(opt.cost, 10) + '" ' +
+									'data-label="' + escapeHtml(opt.label + ' (' + opt.etd + ')') + '">' +
+								'<div>' +
+									'<strong class="text-dark d-block" style="font-size: 12px;">' + escapeHtml(opt.label) + ' <span class="text-muted font-weight-normal">(' + escapeHtml(opt.description || opt.courier_name) + ')</span></strong>' +
+									'<small class="text-muted" style="font-size: 10.5px;">Estimasi ' + escapeHtml(opt.etd) + '</small>' +
+								'</div>' +
+							'</div>' +
+							'<strong class="text-primary" style="font-size: 12.5px; white-space: nowrap;">' + formatRupiah(opt.cost) + '</strong>' +
+						'</label>';
+				});
+				$list.html(html);
+				// Pilih otomatis layanan termurah (urutan pertama) agar pembeli langsung melihat total
+				$list.find('input[name="ro_courier"]').first().prop('checked', true).trigger('change');
+			}).fail(function() {
+				$list.html('<div class="text-danger small py-1">Gagal menghitung ongkir. Periksa koneksi lalu pilih ulang tujuan.</div>');
+			});
+		}
+
+		$(document).on('change', 'input[name="ro_courier"]', function() {
+			var $r = $(this);
+			$('.ro-courier-option').css({ background: '#f8fafc', borderColor: '#dee2e6' });
+			$r.closest('.ro-courier-option').css({ background: '#eef2ff', borderColor: '#717fe0' });
+			$('#checkout_courier_code').val($r.data('code'));
+			$('#checkout_courier_service').val($r.data('service'));
+			$('#checkout_ongkir_preview').val($r.data('cost'));
+			$('#checkout-summary-kurir').text($r.data('label'));
+			recalculateCheckoutTotals();
+		});
+
+		// Jika pembeli mengetik ulang tujuan, batalkan pilihan kurir sebelumnya
+		$(document).on('input', '#ro-destination-input', function() {
+			if ($('#checkout_destination_id').val() && $(this).val() !== $('#checkout_destination_label').val()) {
+				$('#checkout_destination_id').val('');
+				$('#checkout_destination_label').val('');
+				$('#ro-selected-dest-badge').hide().text('');
+				$('#ro-courier-options-wrap').hide();
+				$('#ro-courier-options-list').empty();
+				$('#checkout_courier_code').val('');
+				$('#checkout_courier_service').val('');
+				$('#checkout_ongkir_preview').val('0');
+				recalculateCheckoutTotals();
+			}
+		});
+
+		function updatePromoCountdowns() {
+			var now = Date.now();
+			$('.js-promo-countdown').each(function() {
+				var endAttr = $(this).attr('data-promo-end');
+				if (!endAttr) return;
+				var endMs = Date.parse(endAttr);
+				if (isNaN(endMs)) return;
+
+				var diff = Math.floor((endMs - now) / 1000);
+				if (diff <= 0) {
+					$(this).text('Berakhir');
+					return;
+				}
+				var days = Math.floor(diff / 86400);
+				var hours = Math.floor((diff % 86400) / 3600);
+				var mins = Math.floor((diff % 3600) / 60);
+				var secs = diff % 60;
+				var pad = function(n) { return n < 10 ? '0' + n : String(n); };
+				var label = (days > 0 ? days + ' Hari ' : '') + pad(hours) + ':' + pad(mins) + ':' + pad(secs);
+				$(this).html('<i class="fa fa-clock-o mr-1"></i>' + label);
+			});
+		}
 

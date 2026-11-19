@@ -39,16 +39,29 @@
                 <div class="row">
                   <!-- KIRI: Informasi Utama -->
                   <div class="col-lg-6">
-                    <div class="form-group">
-                      <label for="nama" class="font-weight-bold">Nama Produk <span class="text-danger">*</span></label>
-                      <input type="text" name="nama" class="form-control @error('nama') is-invalid @enderror" id="nama" placeholder="Contoh: Kemeja Flanel Slimfit" value="{{ old('nama') }}" required>
-                      @error('nama')
-                      <span class="invalid-feedback text-danger">{{ $message }}</span>
-                      @enderror
+                    <div class="row">
+                      <div class="col-md-7">
+                        <div class="form-group">
+                          <label for="nama" class="font-weight-bold">Nama Produk <span class="text-danger">*</span></label>
+                          <input type="text" name="nama" class="form-control @error('nama') is-invalid @enderror" id="nama" placeholder="Contoh: Kemeja Flanel Slimfit" value="{{ old('nama') }}" required>
+                          @error('nama')
+                          <span class="invalid-feedback text-danger">{{ $message }}</span>
+                          @enderror
+                        </div>
+                      </div>
+                      <div class="col-md-5">
+                        <div class="form-group">
+                          <label for="supplier" class="font-weight-bold">Supplier / Brand <span class="text-danger">*</span></label>
+                          <input type="text" name="supplier" class="form-control @error('supplier') is-invalid @enderror" id="supplier" placeholder="Contoh: Erigo Official" value="{{ old('supplier') }}" required>
+                          @error('supplier')
+                          <span class="invalid-feedback text-danger">{{ $message }}</span>
+                          @enderror
+                        </div>
+                      </div>
                     </div>
 
                     <div class="row">
-                      <div class="col-md-4">
+                      <div class="col-sm-6">
                         <div class="form-group">
                           <label for="kategori" class="font-weight-bold">Kategori Utama <span class="text-danger">*</span></label>
                           <select name="kategori" id="kategori" class="form-control @error('kategori') is-invalid @enderror" required onchange="updateSubKategoriOptions()">
@@ -65,23 +78,13 @@
                         </div>
                       </div>
 
-                      <div class="col-md-4">
+                      <div class="col-sm-6">
                         <div class="form-group">
                           <label for="sub_kategori" class="font-weight-bold">Sub-Kategori</label>
                           <select name="sub_kategori" id="sub_kategori" class="form-control @error('sub_kategori') is-invalid @enderror">
                             <option value="">-- Pilih Sub-Kategori --</option>
                           </select>
                           @error('sub_kategori')
-                          <span class="invalid-feedback text-danger">{{ $message }}</span>
-                          @enderror
-                        </div>
-                      </div>
-
-                      <div class="col-md-4">
-                        <div class="form-group">
-                          <label for="supplier" class="font-weight-bold">Supplier / Brand <span class="text-danger">*</span></label>
-                          <input type="text" name="supplier" class="form-control @error('supplier') is-invalid @enderror" id="supplier" placeholder="Contoh: Erigo Official" value="{{ old('supplier') }}" required>
-                          @error('supplier')
                           <span class="invalid-feedback text-danger">{{ $message }}</span>
                           @enderror
                         </div>

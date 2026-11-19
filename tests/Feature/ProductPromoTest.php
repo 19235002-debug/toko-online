@@ -56,11 +56,18 @@ class ProductPromoTest extends TestCase
         $shopRes->assertStatus(200);
         $shopRes->assertSee('PROMO -25%');
 
+        $shippingOpt = \App\Services\RajaOngkirService::calculateCost(17480, 350)[0];
+        $expectedOngkir = intval($shippingOpt['cost']);
+
         $checkoutRes = $this->actingAs($user)->postJson('/checkout', [
             'nama_customer' => 'Pembeli Promo',
             'no_hp' => '081234567890',
             'alamat' => 'Jl. Merdeka No. 1',
             'metode_pembayaran' => 'cod',
+            'destination_id' => 17480,
+            'destination_label' => 'GAMBIR, JAKARTA PUSAT, DKI JAKARTA',
+            'courier_code' => $shippingOpt['code'],
+            'courier_service' => $shippingOpt['service'],
             'kode_voucher' => 'EXTRA10K',
             'cart_items' => json_encode([
                 [
@@ -75,7 +82,7 @@ class ProductPromoTest extends TestCase
 
         $order = Order::latest('id_order')->first();
         $this->assertNotNull($order);
-        $this->assertEquals(140000, $order->total_harga); // 150.000 promo - 10.000 voucher
+        $this->assertEquals(140000 + $expectedOngkir, $order->total_harga); // 150.000 promo - 10.000 voucher + ongkir
     }
 
     public function test_expired_or_inactive_promo_reverts_to_regular_price(): void
@@ -125,5 +132,65 @@ class ProductPromoTest extends TestCase
         $barang->refresh();
         $this->assertTrue($barang->promo_aktif);
         $this->assertTrue($barang->is_promo_active);
+    }
+
+    public function test_product_show_includes_promo_countdown_iso_and_available_vouchers_endpoint(): void
+    {
+        $user = User::create([
+            'nama' => 'Buyer Voucher List',
+            'username' => 'buyervlist_' . uniqid(),
+            'email' => 'buyervlist_' . uniqid() . '@example.com',
+            'password' => bcrypt('password'),
+            'role' => 'user',
+        ]);
+
+        $barang = Barang::create([
+            'nama' => 'Jaket Countdown',
+            'kategori' => 'Pria',
+            'supplier' => 'Viola Official',
+            'stok' => 10,
+            'harga' => 200000,
+            'promo_aktif' => true,
+            'promo_persen' => 25,
+            'harga_promo' => 150000,
+            'promo_mulai' => now()->subHour(),
+            'promo_selesai' => now()->addHours(5),
+        ]);
+
+        $showRes = $this->getJson('/frontend/product/' . $barang->id_barang);
+        $showRes->assertStatus(200)
+            ->assertJsonPath('is_promo_active', true);
+        $this->assertNotEmpty($showRes->json('promo_selesai_iso'));
+
+        $vEligible = Voucher::create([
+            'kode_voucher' => 'ELIG' . rand(100, 999),
+            'nama_voucher' => 'Voucher Eligible',
+            'tipe' => 'nominal',
+            'nilai' => 15000,
+            'minimal_belanja' => 100000,
+            'status' => true,
+        ]);
+
+        $vHighMin = Voucher::create([
+            'kode_voucher' => 'HIGH' . rand(100, 999),
+            'nama_voucher' => 'Voucher Min Tinggi',
+            'tipe' => 'persen',
+            'nilai' => 10,
+            'minimal_belanja' => 500000,
+            'status' => true,
+        ]);
+
+        $vRes = $this->actingAs($user)->getJson('/voucher/available?subtotal=150000');
+        $vRes->assertStatus(200)->assertJsonPath('success', true);
+
+        $list = collect($vRes->json('vouchers'));
+        $foundElig = $list->firstWhere('kode_voucher', $vEligible->kode_voucher);
+        $foundHigh = $list->firstWhere('kode_voucher', $vHighMin->kode_voucher);
+
+        $this->assertNotNull($foundElig);
+        $this->assertTrue($foundElig['eligible']);
+        $this->assertNotNull($foundHigh);
+        $this->assertFalse($foundHigh['eligible']);
+        $this->assertEquals(350000, $foundHigh['kurang']);
     }
 }

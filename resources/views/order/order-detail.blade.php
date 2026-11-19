@@ -52,43 +52,79 @@
                             <form action="{{ route('order.updateStatus', $order->id_order) }}" method="POST">
                                 @csrf
                                 @method('PUT')
+                                @php
+                                    $allowedNext = $order->allowedNextStatuses();
+                                    $statusOptions = [
+                                        'pending' => 'Menunggu Pembayaran / Konfirmasi',
+                                        'diproses' => 'Diproses (Packing)',
+                                        'dikirim' => 'Dikirim (Shipping)',
+                                        'selesai' => 'Selesai',
+                                        'dibatalkan' => 'Dibatalkan',
+                                    ];
+                                @endphp
                                 <div class="form-group">
                                     <label for="status" class="font-weight-bold">Ubah Status:</label>
-                                    <select name="status" id="status" class="form-control" required>
-                                        <option value="pending" {{ $order->status == 'pending' ? 'selected' : '' }}>Menunggu Proses (Pending)</option>
-                                        <option value="diproses" {{ $order->status == 'diproses' ? 'selected' : '' }}>Diproses (Packing)</option>
-                                        <option value="dikirim" {{ $order->status == 'dikirim' ? 'selected' : '' }}>Dikirim (Shipping)</option>
-                                        <option value="selesai" {{ $order->status == 'selesai' ? 'selected' : '' }}>Selesai</option>
-                                        <option value="dibatalkan" {{ $order->status == 'dibatalkan' ? 'selected' : '' }}>Dibatalkan</option>
+                                    <select name="status" id="status" class="form-control" required {{ empty($allowedNext) ? 'disabled' : '' }}>
+                                        @foreach($statusOptions as $val => $label)
+                                            @if($val === $order->status || in_array($val, $allowedNext))
+                                                <option value="{{ $val }}" {{ $order->status == $val ? 'selected' : '' }}>{{ $label }}</option>
+                                            @endif
+                                        @endforeach
                                     </select>
-                                    <small class="text-muted d-block mt-1">
-                                        *Jika status diubah ke <em>Dibatalkan</em>, stok produk akan otomatis dikembalikan.
-                                    </small>
+                                    @if(empty($allowedNext))
+                                        <small class="text-muted d-block mt-1">Pesanan sudah berstatus akhir (<strong>{{ ucfirst($order->status) }}</strong>).</small>
+                                    @else
+                                        <small class="text-muted d-block mt-1">
+                                            *Alur: Pending → Diproses → Dikirim → Selesai. Jika dibatalkan, stok produk dikembalikan otomatis.
+                                        </small>
+                                    @endif
                                 </div>
 
+                                @php
+                                    $ekspedisiPresets = ['JNE', 'J&T', 'SiCepat', 'AnterAja', 'POS Indonesia', 'TIKI', 'Ninja Xpress', 'Lion Parcel', 'GoSend / Grab', 'Kurir Toko'];
+                                    $currentEks = $order->ekspedisi;
+                                @endphp
                                 <div class="form-group mb-2">
                                     <label for="ekspedisi" class="font-weight-bold">Ekspedisi / Kurir:</label>
                                     <select name="ekspedisi" id="ekspedisi" class="form-control form-control-sm">
                                         <option value="">-- Pilih Ekspedisi --</option>
-                                        <option value="JNE" {{ $order->ekspedisi == 'JNE' ? 'selected' : '' }}>JNE Express</option>
-                                        <option value="J&T" {{ $order->ekspedisi == 'J&T' ? 'selected' : '' }}>J&T Express</option>
-                                        <option value="SiCepat" {{ $order->ekspedisi == 'SiCepat' ? 'selected' : '' }}>SiCepat</option>
-                                        <option value="Anteraja" {{ $order->ekspedisi == 'Anteraja' ? 'selected' : '' }}>Anteraja</option>
-                                        <option value="Pos Indonesia" {{ $order->ekspedisi == 'Pos Indonesia' ? 'selected' : '' }}>Pos Indonesia</option>
-                                        <option value="GoSend / Grab" {{ $order->ekspedisi == 'GoSend / Grab' ? 'selected' : '' }}>GoSend / Grab Express</option>
-                                        <option value="Kurir Toko" {{ $order->ekspedisi == 'Kurir Toko' ? 'selected' : '' }}>Kurir Toko / Internal</option>
+                                        @if($currentEks && !in_array($currentEks, $ekspedisiPresets))
+                                            <option value="{{ $currentEks }}" selected>{{ $currentEks }}</option>
+                                        @endif
+                                        @foreach($ekspedisiPresets as $eks)
+                                            <option value="{{ $eks }}" {{ strcasecmp((string) $currentEks, $eks) === 0 ? 'selected' : '' }}>{{ $eks }}</option>
+                                        @endforeach
                                     </select>
                                 </div>
 
                                 <div class="form-group mb-3">
-                                    <label for="no_resi" class="font-weight-bold">Nomor Resi Pengiriman:</label>
+                                    <label for="no_resi" class="font-weight-bold">Nomor Resi Pengiriman <span id="resi-required-mark" class="text-danger" style="display: none;">*</span>:</label>
                                     <input type="text" name="no_resi" id="no_resi" class="form-control form-control-sm" placeholder="Contoh: JP1234567890" value="{{ $order->no_resi }}">
+                                    <small class="text-muted">Wajib diisi saat mengubah status ke <em>Dikirim</em>.</small>
                                 </div>
 
+                                @if(!empty($allowedNext))
                                 <button type="submit" class="btn btn-primary btn-block btn-action">
                                     <i class="fa-solid fa-floppy-disk mr-1"></i> Simpan Status Baru
                                 </button>
+                                @endif
                             </form>
+
+                            <script>
+                                (function() {
+                                    var statusEl = document.getElementById('status');
+                                    var resiEl = document.getElementById('no_resi');
+                                    var markEl = document.getElementById('resi-required-mark');
+                                    if (!statusEl || !resiEl) return;
+                                    function syncResiReq() {
+                                        var needResi = statusEl.value === 'dikirim';
+                                        resiEl.required = needResi;
+                                        if (markEl) markEl.style.display = needResi ? 'inline' : 'none';
+                                    }
+                                    statusEl.addEventListener('change', syncResiReq);
+                                    syncResiReq();
+                                })();
+                            </script>
 
                             @if($order->status == 'dikirim' && $order->no_resi)
                             @php
@@ -139,7 +175,24 @@
                                 </tr>
                                 <tr>
                                     <th class="text-muted">Alamat:</th>
-                                    <td>{{ $order->alamat }}</td>
+                                    <td>
+                                        {{ $order->alamat }}
+                                        @if($order->destination_label)
+                                            <div class="small text-primary font-weight-bold mt-1"><i class="fas fa-map-marker-alt mr-1"></i> {{ $order->destination_label }}</div>
+                                        @endif
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th class="text-muted">Kurir Dipilih:</th>
+                                    <td>
+                                        <span class="badge badge-light border text-dark px-2 py-1">{{ $order->kurir ?? $order->ekspedisi ?? '-' }}</span>
+                                        @if($order->estimasi)
+                                            <small class="text-muted ml-1">({{ $order->estimasi }})</small>
+                                        @endif
+                                        @if($order->berat)
+                                            <small class="text-muted d-block">Berat estimasi: {{ number_format($order->berat / 1000, 2) }} kg</small>
+                                        @endif
+                                    </td>
                                 </tr>
                                 <tr>
                                     <th class="text-muted">Catatan:</th>
@@ -149,9 +202,17 @@
                                     <th class="text-muted">Pembayaran:</th>
                                     <td>
                                         @if($order->metode_pembayaran == 'midtrans')
-                                            <span class="badge badge-primary px-2 py-1"><i class="fa fa-credit-card mr-1"></i> Midtrans Sandbox</span>
+                                            <span class="badge badge-primary px-2 py-1"><i class="fa fa-credit-card mr-1"></i> Midtrans</span>
+                                            @if($order->payment_type)
+                                                <small class="text-muted text-uppercase ml-1">({{ str_replace('_', ' ', $order->payment_type) }})</small>
+                                            @endif
                                         @else
                                             <span class="badge badge-info text-uppercase px-2 py-1">{{ $order->metode_pembayaran }}</span>
+                                        @endif
+                                        @if($order->paid_at)
+                                            <small class="text-success d-block"><i class="fas fa-check-circle mr-1"></i> Lunas: {{ $order->paid_at->format('d M Y, H:i') }}</small>
+                                        @elseif($order->metode_pembayaran == 'midtrans')
+                                            <small class="text-warning d-block"><i class="fas fa-clock mr-1"></i> Belum dibayar</small>
                                         @endif
                                     </td>
                                 </tr>
@@ -257,6 +318,14 @@
                                             </th>
                                         </tr>
                                         @endif
+                                        <tr class="bg-white">
+                                            <th colspan="5" class="text-right text-muted">
+                                                <i class="fas fa-truck mr-1"></i> Ongkos Kirim ({{ $order->kurir ?? $order->ekspedisi ?? 'Kurir' }}):
+                                            </th>
+                                            <th class="text-right font-weight-bold {{ ($order->ongkir ?? 0) > 0 ? 'text-dark' : 'text-success' }}">
+                                                {{ ($order->ongkir ?? 0) > 0 ? 'Rp ' . number_format($order->ongkir, 0, ',', '.') : 'Gratis' }}
+                                            </th>
+                                        </tr>
                                         <tr class="bg-light">
                                             <th colspan="5" class="text-right font-weight-bold fs-15">TOTAL PEMBAYARAN:</th>
                                             <th class="text-right font-weight-bold text-success fs-16">

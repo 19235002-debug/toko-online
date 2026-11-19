@@ -84,13 +84,23 @@ class StorefrontEnhancementsTest extends TestCase
             ->assertJsonCount(1, 'wishlist')
             ->assertJsonPath('cart.0.qty', 2);
 
-        // Checkout with Express courier (Rp 30.000) -> 200.000 + 30.000 = 230.000
+        $costRes = $this->actingAs($user)->postJson('/shipping/cost', [
+            'destination_id' => 17480,
+            'total_qty' => 2,
+        ]);
+        $costRes->assertStatus(200)->assertJsonPath('success', true);
+        $chosenOption = $costRes->json('options.0');
+        $expectedOngkir = intval($chosenOption['cost']);
+
         $checkoutRes = $this->actingAs($user)->postJson('/checkout', [
             'nama_customer' => $user->nama,
             'no_hp' => $user->no_hp,
             'alamat' => $user->alamat,
             'metode_pembayaran' => 'cod',
-            'kurir' => 'express',
+            'destination_id' => 17480,
+            'destination_label' => 'GAMBIR, JAKARTA PUSAT, DKI JAKARTA',
+            'courier_code' => $chosenOption['code'],
+            'courier_service' => $chosenOption['service'],
             'cart_items' => json_encode([
                 ['id' => $barang->id_barang, 'qty' => 2],
             ]),
@@ -99,8 +109,8 @@ class StorefrontEnhancementsTest extends TestCase
         $checkoutRes->assertStatus(200)->assertJson(['success' => true]);
 
         $order = Order::latest('id_order')->first();
-        $this->assertEquals(30000, $order->ongkir);
-        $this->assertEquals(230000, $order->total_harga);
+        $this->assertEquals($expectedOngkir, $order->ongkir);
+        $this->assertEquals(200000 + $expectedOngkir, $order->total_harga);
         $this->assertEquals(0, CartItem::where('user_id', $user->id_user)->count());
     }
 
@@ -110,6 +120,63 @@ class StorefrontEnhancementsTest extends TestCase
         $res = $this->actingAs($admin)->get('/laporan/export-csv');
         $res->assertStatus(200);
         $this->assertStringContainsString('text/csv', $res->headers->get('content-type'));
+    }
+
+    public function test_rajaongkir_shipping_endpoints_and_checkout(): void
+    {
+        $user = User::create([
+            'nama' => 'RajaOngkir Buyer',
+            'username' => 'ro_buyer_' . uniqid(),
+            'email' => 'ro_buyer_' . uniqid() . '@example.com',
+            'password' => bcrypt('password123'),
+            'role' => 'user',
+            'no_hp' => '081234567890',
+            'alamat' => 'Jl. Gambir No. 10, Jakarta Pusat',
+        ]);
+
+        $destRes = $this->actingAs($user)->getJson('/shipping/destinations?q=jakarta');
+        $destRes->assertStatus(200)->assertJsonPath('success', true);
+        $this->assertNotEmpty($destRes->json('destinations'));
+
+        $costRes = $this->actingAs($user)->postJson('/shipping/cost', [
+            'destination_id' => 17480,
+            'total_qty' => 2,
+        ]);
+        $costRes->assertStatus(200)->assertJsonPath('success', true);
+        $this->assertNotEmpty($costRes->json('options'));
+
+        $barang = Barang::create([
+            'nama' => 'Kaos RajaOngkir',
+            'kategori' => 'Pria',
+            'supplier' => 'Erigo',
+            'stok' => 10,
+            'harga' => 100000,
+        ]);
+
+        $chosenOpt = $costRes->json('options.0');
+        $expectedOngkir = intval(\App\Services\RajaOngkirService::findOption(17480, 350, $chosenOpt['code'], $chosenOpt['service'])['cost']);
+
+        $checkoutRes = $this->actingAs($user)->postJson('/checkout', [
+            'nama_customer' => $user->nama,
+            'no_hp' => $user->no_hp,
+            'alamat' => $user->alamat,
+            'metode_pembayaran' => 'cod',
+            'destination_id' => 17480,
+            'destination_label' => 'GAMBIR, JAKARTA PUSAT, DKI JAKARTA',
+            'courier_code' => $chosenOpt['code'],
+            'courier_service' => $chosenOpt['service'],
+            'cart_items' => json_encode([
+                ['id' => $barang->id_barang, 'qty' => 1],
+            ]),
+        ]);
+
+        $checkoutRes->assertStatus(200)->assertJsonPath('success', true);
+
+        $order = Order::latest('id_order')->first();
+        $this->assertEquals($expectedOngkir, $order->ongkir);
+        $this->assertEquals(17480, $order->destination_id);
+        $this->assertEquals(strtolower($chosenOpt['code']), $order->kurir_kode);
+        $this->assertEquals(100000 + $expectedOngkir, $order->total_harga);
     }
 }
 
