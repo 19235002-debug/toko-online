@@ -556,6 +556,61 @@
 			openSnapPayment(res);
 		}
 
+		function openSwitchPaymentModal() {
+			$('#modalOrderReceipt').modal('hide');
+			$('#modalSwitchPayment').modal('show');
+		}
+
+		function executeSwitchPayment(target) {
+			var res = window.lastCheckoutRes;
+			if (!res || !res.kode_order) {
+				swal("Pemberitahuan", "Nomor pesanan tidak ditemukan.", "error");
+				return;
+			}
+
+			$('#modalSwitchPayment').modal('hide');
+
+			swal({
+				title: "Memproses...",
+				text: "Sedang mengubah metode pembayaran...",
+				icon: "info",
+				buttons: false,
+				closeOnClickOutside: false,
+				closeOnEsc: false
+			});
+
+			$.post('/pesanan/switch-payment/' + encodeURIComponent(res.kode_order), {
+				_token: $('input[name="_token"]').val() || '{{ csrf_token() }}',
+				target: target
+			}, function(resp) {
+				swal.close();
+				if (!resp || !resp.success) {
+					swal("Gagal", resp.message || "Gagal mengubah metode pembayaran.", "error");
+					$('#modalOrderReceipt').modal('show');
+					return;
+				}
+
+				if (resp.mode === 'cod') {
+					res.metode_pembayaran = 'cod';
+					showModernOrderReceipt(res, 'cod');
+					swal("Metode Berhasil Diubah!", "Pesanan Anda kini menggunakan metode COD (Bayar di Tempat). Bayar tunai ke kurir saat paket diantar.", "success");
+				} else if (resp.mode === 'online') {
+					res.snap_token = resp.snap_token;
+					res.metode_pembayaran = 'midtrans';
+					showModernOrderReceipt(res, 'pending');
+					if (typeof window.snap !== 'undefined' && resp.snap_token) {
+						$('#modalOrderReceipt').modal('hide');
+						openSnapPayment(res);
+					}
+				}
+			}).fail(function(xhr) {
+				swal.close();
+				var err = xhr.responseJSON ? xhr.responseJSON.message : "Terjadi kesalahan pada server.";
+				swal("Gagal", err, "error");
+				$('#modalOrderReceipt').modal('show');
+			});
+		}
+
 		function openSnapPayment(res) {
 			startSnapLivePolling(res);
 			window.snap.pay(res.snap_token, {
@@ -600,11 +655,13 @@
 			var $sub = $('#receipt-subtitle');
 			var $pendingBar = $('#receipt-pending-bar');
 			var $reopenBtn = $('#receipt-reopen-snap-btn');
+			var $switchBtn = $('#receipt-switch-method-btn');
 
 			if (state === 'paid') {
 				stopReceiptPolling();
 				$pendingBar.hide();
 				$reopenBtn.hide();
+				$switchBtn.hide();
 				$hero.css('background', 'linear-gradient(135deg, #ecfdf5 0%, #eef2ff 100%)');
 				$iconWrap.css({ background: '#10b981', boxShadow: '0 12px 28px rgba(16, 185, 129, 0.3)' });
 				$icon.attr('class', 'fa fa-check');
@@ -615,6 +672,7 @@
 				stopReceiptPolling();
 				$pendingBar.hide();
 				$reopenBtn.hide();
+				$switchBtn.hide();
 				$hero.css('background', 'linear-gradient(135deg, #eff6ff 0%, #eef2ff 100%)');
 				$iconWrap.css({ background: '#4f46e5', boxShadow: '0 12px 28px rgba(79, 70, 229, 0.28)' });
 				$icon.attr('class', 'fa fa-check');
@@ -625,6 +683,7 @@
 				stopReceiptAutoClose();
 				$pendingBar.show();
 				$reopenBtn.toggle(!!res.snap_token);
+				$switchBtn.toggle(res.metode_pembayaran === 'midtrans' || !!res.snap_token);
 				$hero.css('background', 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)');
 				$iconWrap.css({ background: '#f59e0b', boxShadow: '0 12px 28px rgba(245, 158, 11, 0.28)' });
 				$icon.attr('class', 'fa fa-clock-o');

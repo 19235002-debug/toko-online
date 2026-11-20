@@ -1180,6 +1180,7 @@ class FrontendController extends Controller
                 try {
                     $snapToken = Snap::getSnapToken($params);
                     $order->snap_token = $snapToken;
+                    $order->midtrans_order_id = $order->kode_order;
                     $order->save();
                 } catch (Exception $midtransErr) {
                     // Batalkan pesanan & kembalikan stok agar tidak ada pesanan "menggantung" tanpa token bayar
@@ -1246,7 +1247,12 @@ class FrontendController extends Controller
             $orderId = $notification->order_id;
             $fraudStatus = $notification->fraud_status;
 
-            $order = Order::with('items')->where('kode_order', $orderId)->first();
+            $baseOrderId = preg_replace('/-R\d+$/', '', $orderId);
+            $order = Order::with('items')
+                ->where('midtrans_order_id', $orderId)
+                ->orWhere('kode_order', $orderId)
+                ->orWhere('kode_order', $baseOrderId)
+                ->first();
             if (!$order) {
                 return response()->json(['message' => 'Order tidak ditemukan'], 404);
             }
@@ -1339,5 +1345,112 @@ class FrontendController extends Controller
         }
 
         return view('order.print-invoice', compact('order'));
+    }
+
+    /**
+     * Pembeli mengganti metode pembayaran pesanan (misal dari Online ke COD, atau reset token Snap).
+     */
+    public function switchPaymentMethod(Request $request, $kode_order)
+    {
+        $request->validate([
+            'target' => 'required|in:cod,reset_online',
+        ]);
+
+        $order = Order::with('items')->where('kode_order', $kode_order)->firstOrFail();
+
+        if (auth()->check()) {
+            $user = auth()->user();
+            $isOwner = ($order->user_id && $order->user_id == $user->id_user)
+                || ($user->no_hp && $order->no_hp === $user->no_hp)
+                || in_array($user->role, ['admin', 'superadmin']);
+            if (!$isOwner) {
+                return response()->json(['success' => false, 'message' => 'Akses ditolak.'], 403);
+            }
+        }
+
+        if ($order->status !== 'pending') {
+            return response()->json(['success' => false, 'message' => 'Pesanan tidak dalam status menunggu pembayaran.'], 400);
+        }
+
+        if ($request->target === 'cod') {
+            if ($order->metode_pembayaran === 'midtrans' && $order->snap_token) {
+                try {
+                    Config::$serverKey = config('midtrans.server_key');
+                    Config::$isProduction = (bool) config('midtrans.is_production', false);
+                    \Midtrans\Transaction::cancel($order->midtrans_order_id ?: $order->kode_order);
+                } catch (\Throwable $e) {}
+            }
+
+            $order->metode_pembayaran = 'cod';
+            $order->save();
+
+            return response()->json([
+                'success' => true,
+                'mode' => 'cod',
+                'message' => 'Metode pembayaran berhasil diubah ke COD (Bayar di Tempat)!',
+                'metode_pembayaran' => 'cod',
+                'total_formatted' => 'Rp ' . number_format($order->total_harga, 0, ',', '.'),
+            ]);
+        }
+
+        if ($request->target === 'reset_online') {
+            $prevOrderId = $order->midtrans_order_id ?: $order->kode_order;
+            try {
+                Config::$serverKey = config('midtrans.server_key');
+                Config::$isProduction = (bool) config('midtrans.is_production', false);
+                \Midtrans\Transaction::cancel($prevOrderId);
+            } catch (\Throwable $e) {}
+
+            $attempt = ($order->payment_attempts ?? 0) + 1;
+            $order->payment_attempts = $attempt;
+            $newMidtransOrderId = $order->kode_order . '-R' . $attempt;
+            $order->midtrans_order_id = $newMidtransOrderId;
+
+            Config::$serverKey = config('midtrans.server_key');
+            Config::$isProduction = (bool) config('midtrans.is_production', false);
+            Config::$isSanitized = (bool) config('midtrans.is_sanitized', true);
+            Config::$is3ds = (bool) config('midtrans.is_3ds', true);
+
+            $custName = trim($order->nama_customer ?: 'Pelanggan');
+            $nameParts = explode(' ', $custName, 2);
+            $firstName = $nameParts[0];
+            $lastName = $nameParts[1] ?? '';
+
+            $params = [
+                'transaction_details' => [
+                    'order_id' => $newMidtransOrderId,
+                    'gross_amount' => (int) $order->total_harga,
+                ],
+                'customer_details' => [
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
+                    'phone' => $order->no_hp,
+                ],
+                'expiry' => [
+                    'unit' => 'hours',
+                    'duration' => 24,
+                ],
+            ];
+
+            try {
+                $newSnapToken = Snap::getSnapToken($params);
+                $order->metode_pembayaran = 'midtrans';
+                $order->snap_token = $newSnapToken;
+                $order->save();
+
+                return response()->json([
+                    'success' => true,
+                    'mode' => 'online',
+                    'message' => 'Sesi pembayaran berhasil di-reset. Silakan pilih channel pembayaran baru.',
+                    'snap_token' => $newSnapToken,
+                    'kode_order' => $order->kode_order,
+                    'total_formatted' => 'Rp ' . number_format($order->total_harga, 0, ',', '.'),
+                ]);
+            } catch (\Throwable $e) {
+                return response()->json(['success' => false, 'message' => 'Gagal membuat sesi pembayaran baru: ' . $e->getMessage()], 500);
+            }
+        }
+
+        return response()->json(['success' => false, 'message' => 'Target tidak valid.'], 400);
     }
 }

@@ -203,7 +203,8 @@ class OrderController extends Controller
         \Midtrans\Config::$isProduction = (bool) config('midtrans.is_production', false);
 
         try {
-            $status = \Midtrans\Transaction::status($order->kode_order);
+            $midtransTarget = $order->midtrans_order_id ?: $order->kode_order;
+            $status = \Midtrans\Transaction::status($midtransTarget);
             $get = fn($key) => is_object($status) ? ($status->{$key} ?? null) : ($status[$key] ?? null);
 
             return self::applyMidtransStatus($order, $get('transaction_status'), $get('fraud_status'), $get('payment_type'));

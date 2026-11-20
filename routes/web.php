@@ -47,6 +47,7 @@ Route::middleware('auth')->group(function () {
 // Midtrans Webhook / Callback
 Route::post('/midtrans/callback', [FrontendController::class, 'midtransCallback'])->name('midtrans.callback');
 Route::post('/midtrans/sync/{kode_order}', [FrontendController::class, 'syncOrder'])->name('midtrans.sync');
+Route::post('/pesanan/switch-payment/{kode_order}', [FrontendController::class, 'switchPaymentMethod'])->name('frontend.order.switch_payment');
 
 // ==========================================
 // 2. AUTHENTICATION (Login, Register, Logout)

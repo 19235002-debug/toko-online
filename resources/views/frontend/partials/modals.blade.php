@@ -476,7 +476,10 @@
 
 					<div class="d-flex flex-column" style="gap: 8px;">
 						<button type="button" id="receipt-reopen-snap-btn" onclick="reopenReceiptSnap()" class="btn btn-warning text-white font-weight-bold py-2" style="display: none; border-radius: 12px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border: none;">
-							<i class="zmdi zmdi-card mr-1"></i> Ganti Metode Pembayaran
+							<i class="zmdi zmdi-eye mr-1"></i> Buka / Cek Kode Bayar Aktif
+						</button>
+						<button type="button" id="receipt-switch-method-btn" onclick="openSwitchPaymentModal()" class="btn btn-outline-primary font-weight-bold py-2" style="display: none; border-radius: 12px; font-size: 13.5px;">
+							<i class="zmdi zmdi-refresh mr-1"></i> Ganti Metode Pembayaran
 						</button>
 						<a id="receipt-track-btn" href="#" class="btn btn-primary font-weight-bold py-2" style="border-radius: 12px; background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); border: none; box-shadow: 0 8px 18px rgba(79, 70, 229, 0.25);">
 							Lacak Status Pesanan
@@ -499,6 +502,54 @@
 				<!-- Progress bar auto-close 3 detik -->
 				<div id="receipt-progress-wrap" style="display: none; height: 5px; width: 100%; background: #e2e8f0; overflow: hidden;">
 					<div id="receipt-progress-bar" style="height: 100%; width: 100%; background: linear-gradient(90deg, #10b981 0%, #4f46e5 100%);"></div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Modal Pilihan Ganti Metode Pembayaran -->
+	<div class="modal fade" id="modalSwitchPayment" tabindex="-1" role="dialog" aria-hidden="true" style="z-index: 1070;">
+		<div class="modal-dialog modal-dialog-centered modal-sm" role="document" style="max-width: 440px;">
+			<div class="modal-content" style="border: none; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 50px rgba(15,23,42,0.25);">
+				<div class="modal-header bg-white px-4 py-3 border-bottom d-flex align-items-center justify-content-between">
+					<div class="d-flex align-items-center" style="gap: 10px;">
+						<span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 36px; height: 36px; background: #eef2ff; color: #6366f1;">
+							<i class="zmdi zmdi-card" style="font-size: 18px;"></i>
+						</span>
+						<h6 class="modal-title font-weight-bold text-dark mb-0" style="font-size: 15px;">Ganti Metode Pembayaran</h6>
+					</div>
+					<button type="button" class="btn btn-sm btn-light rounded-circle" data-dismiss="modal" aria-label="Close" style="width: 32px; height: 32px;">
+						<i class="zmdi zmdi-close text-dark"></i>
+					</button>
+				</div>
+				<div class="modal-body p-4 bg-white">
+					<p class="text-muted small mb-3">Pilih bagaimana Anda ingin menyelesaikan pembayaran pesanan ini:</p>
+
+					<!-- Pilihan 1: Reset Online Channel -->
+					<div class="p-3 mb-3 rounded border" style="background: #f8fafc; cursor: pointer; transition: all 0.2s ease;" onclick="executeSwitchPayment('reset_online')" onmouseover="this.style.borderColor='#6366f1'; this.style.background='#f5f7ff';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.background='#f8fafc';">
+						<div class="d-flex align-items-center justify-content-between mb-1">
+							<strong class="text-dark" style="font-size: 13.5px;"><i class="zmdi zmdi-refresh mr-1 text-primary"></i> Pilih Channel Online Lain</strong>
+							<span class="badge badge-primary px-2 py-0.5" style="font-size: 10px;">QRIS / Bank VA</span>
+						</div>
+						<small class="text-muted d-block" style="font-size: 11.5px; line-height: 1.4;">
+							Reset transaksi dan buka kembali menu pilihan pembayaran dari awal (QRIS, VA Bank BCA, Mandiri, BNI, BRI, E-Wallet).
+						</small>
+					</div>
+
+					<!-- Pilihan 2: Ganti ke COD -->
+					<div class="p-3 mb-3 rounded border" style="background: #f8fafc; cursor: pointer; transition: all 0.2s ease;" onclick="executeSwitchPayment('cod')" onmouseover="this.style.borderColor='#10b981'; this.style.background='#ecfdf5';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.background='#f8fafc';">
+						<div class="d-flex align-items-center justify-content-between mb-1">
+							<strong class="text-dark" style="font-size: 13.5px;"><i class="zmdi zmdi-truck mr-1 text-success"></i> Ubah ke COD (Bayar di Tempat)</strong>
+							<span class="badge badge-success px-2 py-0.5" style="font-size: 10px;">Tunai</span>
+						</div>
+						<small class="text-muted d-block" style="font-size: 11.5px; line-height: 1.4;">
+							Bayar tunai ke kurir saat paket sampai di alamat Anda tanpa perlu membayar online / ke gerai minimarket.
+						</small>
+					</div>
+
+					<button type="button" class="btn btn-light btn-block font-weight-bold py-2 border" data-dismiss="modal" style="border-radius: 10px; font-size: 13px;">
+						Batal
+					</button>
 				</div>
 			</div>
 		</div>

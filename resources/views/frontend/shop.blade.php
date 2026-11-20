@@ -1,4 +1,4 @@
-﻿@include('frontend.partials.storefront-head', ['pageTitle' => 'Katalog Produk | Coza Store'])
+@include('frontend.partials.storefront-head', ['pageTitle' => 'Katalog Produk | Coza Store'])
 <body class="animsition">
 	@include('sweetalert::alert')
 	@include('frontend.partials.storefront-header', ['headerClass' => 'header-v4'])

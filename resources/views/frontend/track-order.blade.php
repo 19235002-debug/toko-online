@@ -751,6 +751,9 @@
 										<button type="button" class="btn btn-primary btn-sm font-weight-bold px-3 mr-2" onclick="payWithSnap('{{ $order->snap_token }}', '{{ $order->kode_order }}')" style="background-color: #717fe0; border: none; border-radius: 6px;">
 											<i class="fa fa-credit-card mr-1"></i> Bayar Sekarang (Online)
 										</button>
+										<button type="button" class="btn btn-outline-warning btn-sm font-weight-bold px-3 mr-2" onclick="promptTrackSwitchPayment('{{ $order->kode_order }}')" style="border-radius: 6px;">
+											<i class="zmdi zmdi-refresh mr-1"></i> Ganti Metode Bayar
+										</button>
 										@endif
 
 										@php
@@ -985,6 +988,61 @@
 						location.reload();
 					});
 				}
+			});
+		}
+
+		function promptTrackSwitchPayment(kodeOrder) {
+			swal({
+				title: "Ganti Metode Pembayaran",
+				text: "Ingin mengganti metode pembayaran?\n\n• Pilih Channel Online Lain: Reset dan buka kembali pilihan QRIS / VA Bank.\n• Ubah ke COD: Bayar tunai saat kurir tiba di alamat.",
+				buttons: {
+					cancel: {
+						text: "Batal",
+						visible: true,
+						className: "btn btn-light"
+					},
+					cod: {
+						text: "Ubah ke COD",
+						value: "cod",
+						className: "btn btn-success"
+					},
+					reset: {
+						text: "Pilih Channel Online Lain",
+						value: "reset_online",
+						className: "btn btn-primary"
+					}
+				}
+			}).then(function(val) {
+				if (!val) return;
+
+				swal({
+					title: "Memproses...",
+					text: "Sedang memperbarui metode pembayaran...",
+					buttons: false,
+					closeOnClickOutside: false
+				});
+
+				$.post('/pesanan/switch-payment/' + encodeURIComponent(kodeOrder), {
+					_token: '{{ csrf_token() }}',
+					target: val
+				}, function(resp) {
+					swal.close();
+					if (resp && resp.success) {
+						if (resp.mode === 'cod') {
+							swal("Metode Berhasil Diubah!", resp.message, "success").then(function() {
+								location.reload();
+							});
+						} else if (resp.mode === 'online' && resp.snap_token) {
+							payWithSnap(resp.snap_token, kodeOrder);
+						}
+					} else {
+						swal("Gagal", resp.message || "Gagal mengubah metode pembayaran.", "error");
+					}
+				}).fail(function(xhr) {
+					swal.close();
+					var err = xhr.responseJSON ? xhr.responseJSON.message : "Terjadi kesalahan pada server.";
+					swal("Gagal", err, "error");
+				});
 			});
 		}
 	</script>
