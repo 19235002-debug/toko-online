@@ -245,8 +245,13 @@
                         </form>
                     </div>
 
-                    <!-- Right: Lihat Toko, Dark Mode, Notification Bell, User Dropdown -->
+                    <!-- Right: Jam Real-time Jakarta, Lihat Toko, Dark Mode, Notification Bell, User Dropdown -->
                     <div class="flex items-center gap-2.5">
+                        <div class="hidden xl:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-300" title="Waktu Real-time Jakarta (WIB / UTC+7)">
+                            <i class="fa-regular fa-clock text-indigo-500"></i>
+                            <span id="live-jakarta-clock">--:-- WIB</span>
+                        </div>
+
                         <a href="/" target="_blank" class="ta-store-btn hidden md:inline-flex" title="Buka Halaman Toko">
                             <i class="fa-solid fa-arrow-up-right-from-square text-xs" style="color: #465fff;"></i>
                             <span>Lihat Toko</span>
@@ -495,6 +500,28 @@
                 }
             });
         });
+        // Real-time Jakarta Clock (WIB / UTC+7)
+        function updateJakartaClock() {
+            try {
+                var now = new Date();
+                var timeStr = new Intl.DateTimeFormat('id-ID', {
+                    timeZone: 'Asia/Jakarta',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                }).format(now);
+                var dateStr = new Intl.DateTimeFormat('id-ID', {
+                    timeZone: 'Asia/Jakarta',
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric'
+                }).format(now);
+                $('#live-jakarta-clock').text(dateStr + ' • ' + timeStr + ' WIB');
+            } catch (e) {}
+        }
+        setInterval(updateJakartaClock, 1000);
+        updateJakartaClock();
     </script>
 
 </body>

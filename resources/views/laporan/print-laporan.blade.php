@@ -143,7 +143,7 @@
     </table>
 
     <div class="signature-section">
-        <p>Dicetak pada: {{ date('d/m/Y H:i') }}<br>Admin Pengelola,</p>
+        <p>Dicetak pada: {{ now()->setTimezone('Asia/Jakarta')->format('d/m/Y H:i') }} WIB<br>Admin Pengelola,</p>
         <br><br><br>
         <p><strong>( {{ auth()->user()->nama ?? 'Administrator' }} )</strong></p>
     </div>

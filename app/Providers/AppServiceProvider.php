@@ -22,6 +22,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Kunci zona waktu ke Asia/Jakarta (WIB / UTC+7) dan set locale Indonesia
+        $tz = config('app.timezone', 'Asia/Jakarta');
+        date_default_timezone_set($tz);
+        \Carbon\Carbon::setLocale('id');
+        \Illuminate\Support\Carbon::setLocale('id');
+
         // Blade Directives untuk tombol aksi seragam
         Blade::directive('btnEdit', function ($expression) {
             return "<?php echo \App\Helpers\ActionHelper::edit($expression); ?>";

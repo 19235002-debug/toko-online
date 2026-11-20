@@ -97,3 +97,17 @@ if (!function_exists('store_wa_url')) {
     }
 }
 
+if (!function_exists('wib_now')) {
+    function wib_now() {
+        return now()->setTimezone('Asia/Jakarta');
+    }
+}
+
+if (!function_exists('wib_format')) {
+    function wib_format($datetime, string $format = 'd M Y, H:i'): string {
+        if (!$datetime) return '-';
+        return \Carbon\Carbon::parse($datetime)->setTimezone('Asia/Jakarta')->translatedFormat($format) . ' WIB';
+    }
+}
+
+
