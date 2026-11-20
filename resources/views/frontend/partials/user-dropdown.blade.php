@@ -45,9 +45,6 @@
                 <a href="{{ route('profile.edit') }}" class="ta-frontend-dropdown-item {{ $activeItem === 'profile' ? 'active' : '' }}">
                     <i class="fa-solid fa-user-gear"></i> Profil Admin
                 </a>
-                <a href="/order" class="ta-frontend-dropdown-item">
-                    <i class="fa-solid fa-box-archive"></i> Kelola Pesanan
-                </a>
             @else
                 <a href="/pesanan-saya" class="ta-frontend-dropdown-item {{ $activeItem === 'pesanan' ? 'active' : '' }}">
                     <i class="fa-solid fa-bag-shopping"></i> Pesanan Saya
@@ -87,3 +84,4 @@
     </a>
 </div>
 @endauth
+
