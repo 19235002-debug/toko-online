@@ -220,7 +220,7 @@
 		<div class="container">
 			<div class="d-flex flex-wrap justify-content-between align-items-center mb-3" style="gap: 10px;">
 				<div>
-					<span class="badge badge-danger px-2 py-1 mb-1" style="font-size: 11px; border-radius: 99px;"><i class="fa fa-bolt mr-1"></i> PROMO TERBATAS</span>
+					<span class="badge badge-danger px-2 py-1 mb-1" style="font-size: 11px; border-radius: 99px;"><i class="fa fa-tag mr-1"></i> PROMO TERBATAS</span>
 					<h4 class="font-weight-bold text-dark mb-0" style="font-size: 1.4rem;">Promo Spesial Hari Ini</h4>
 				</div>
 				<div class="d-flex flex-wrap align-items-center" style="gap: 10px;">
@@ -255,7 +255,7 @@
 								     data-gambar="{{ $pImg }}">
 
 								<span style="position: absolute; top: 10px; left: 10px; z-index: 5; background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 99px; box-shadow: 0 3px 10px rgba(239,68,68,0.3);">
-									<i class="fa fa-bolt mr-1"></i>PROMO -{{ $pItem->diskon_persen_aktual }}%
+									<i class="fa fa-tag mr-1"></i>PROMO -{{ $pItem->diskon_persen_aktual }}%
 								</span>
 
 								<a href="javascript:void(0);"

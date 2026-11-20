@@ -53,7 +53,7 @@
                             <div class="mb-3 p-3 rounded" style="background: linear-gradient(135deg, #fef3c7, #fef9c3); border: 1px solid #fde047;">
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="fa-solid fa-truck-fast text-primary mr-2" style="font-size: 16px;"></i>
-                                    <strong style="color: #92400e; font-size: 13px;">Resi Otomatis &amp; Penjemputan Biteship</strong>
+                                    <strong style="color: #92400e; font-size: 13px;">Resi Otomatis &amp; Penjemputan Kurir</strong>
                                 </div>
                                 <p class="small text-muted mb-2">Klik tombol di bawah untuk membuat resi otomatis dan menjadwalkan kurir <strong>{{ $order->ekspedisi ?: 'JNE/J&T' }}</strong> menjemput paket ke toko.</p>
                                 <form action="{{ route('order.requestPickup', $order->id_order) }}" method="POST">
@@ -72,7 +72,7 @@
                                 </a>
                                 @if($order->biteship_tracking_url)
                                 <a href="{{ $order->biteship_tracking_url }}" target="_blank" class="btn btn-outline-info btn-block btn-sm mt-1">
-                                    <i class="fa fa-location-arrow mr-1"></i> Lacak Pengiriman di Portal Biteship
+                                    <i class="fa fa-location-arrow mr-1"></i> Lacak Pengiriman Real-Time
                                 </a>
                                 @endif
                             </div>
@@ -174,7 +174,7 @@
                             @if($order->metode_pembayaran == 'midtrans')
                             <div class="mt-3 pt-2 border-top text-center">
                                 <small class="text-muted d-block">
-                                    <i class="fa-solid fa-cloud-arrow-down text-info mr-1"></i> Terhubung & sinkron otomatis dengan Midtrans
+                                    <i class="fa-solid fa-cloud-arrow-down text-info mr-1"></i> Terhubung &amp; sinkron otomatis secara real-time
                                 </small>
                             </div>
                             @endif
@@ -231,7 +231,7 @@
                                     <th class="text-muted">Pembayaran:</th>
                                     <td>
                                         @if($order->metode_pembayaran == 'midtrans')
-                                            <span class="badge badge-primary px-2 py-1"><i class="fa fa-credit-card mr-1"></i> Midtrans</span>
+                                            <span class="badge badge-primary px-2 py-1"><i class="fa fa-credit-card mr-1"></i> Pembayaran Online</span>
                                             @if($order->payment_type)
                                                 <small class="text-muted text-uppercase ml-1">({{ str_replace('_', ' ', $order->payment_type) }})</small>
                                             @endif

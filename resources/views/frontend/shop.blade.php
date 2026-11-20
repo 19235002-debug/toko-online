@@ -236,7 +236,7 @@
 								<div class="custom-control custom-switch">
 									<input type="checkbox" class="custom-control-input" id="onlyPromoSwitch" name="promo" value="1" {{ ($onlyPromo ?? '') == '1' ? 'checked' : '' }} onchange="this.form.submit()">
 									<label class="custom-control-label small font-weight-bold text-danger" for="onlyPromoSwitch">
-										<i class="fa fa-bolt mr-1"></i> Sedang Promo
+										<i class="fa fa-tag mr-1"></i> Sedang Promo
 									</label>
 								</div>
 							</div>
@@ -264,7 +264,7 @@
 								<span class="badge badge-light border ml-1">"{{ $search }}"</span>
 							@endif
 							@if(($onlyPromo ?? '') == '1')
-								<span class="badge badge-danger ml-1"><i class="fa fa-bolt mr-1"></i>Sedang Promo</span>
+								<span class="badge badge-danger ml-1"><i class="fa fa-tag mr-1"></i>Sedang Promo</span>
 							@endif
 						</div>
 

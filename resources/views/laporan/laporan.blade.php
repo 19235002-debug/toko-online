@@ -67,7 +67,7 @@
                             <label class="mb-1">Metode Bayar</label>
                             <select name="metode" class="form-control">
                                 <option value="all" {{ $metode == 'all' ? 'selected' : '' }}>Semua Metode</option>
-                                <option value="midtrans" {{ $metode == 'midtrans' ? 'selected' : '' }}>Midtrans</option>
+                                <option value="midtrans" {{ $metode == 'midtrans' ? 'selected' : '' }}>Online (Instan)</option>
                                 <option value="transfer" {{ $metode == 'transfer' ? 'selected' : '' }}>Transfer</option>
                                 <option value="cod" {{ $metode == 'cod' ? 'selected' : '' }}>COD</option>
                             </select>

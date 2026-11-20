@@ -30,7 +30,7 @@
 			@if($item->is_promo_active)
 				<div style="position: absolute; top: 10px; left: 10px; z-index: 5; display: flex; flex-direction: column; align-items: flex-start; gap: 4px;">
 					<span style="background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 99px; box-shadow: 0 3px 10px rgba(239,68,68,0.3);">
-						<i class="fa fa-bolt mr-1"></i>PROMO -{{ $item->diskon_persen_aktual }}%
+						<i class="fa fa-tag mr-1"></i>PROMO -{{ $item->diskon_persen_aktual }}%
 					</span>
 					@if($item->promo_selesai)
 						<span class="js-promo-countdown" data-promo-end="{{ $item->promo_selesai->toIso8601String() }}" style="background: rgba(15, 23, 42, 0.85); color: #fff; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 99px;">

@@ -191,7 +191,7 @@
                                 <div class="p-3 mb-3 rounded border" style="background: #f8fafc;">
                                     <div class="d-flex justify-content-between align-items-center mb-1">
                                         <strong class="text-dark" style="font-size: 13px;">
-                                            <i class="fa-solid fa-plug-circle-check text-success mr-1"></i> API Biteship Logistics (Otomatis)
+                                            <i class="fa-solid fa-plug-circle-check text-success mr-1"></i> Integrasi Kurir &amp; Ekspedisi Otomatis
                                         </strong>
                                         @if(config('services.biteship.api_key'))
                                             <span class="badge rounded-pill px-2.5 py-1" style="background: #dcfce7; color: #15803d; font-size: 11px;">Terhubung (Live/Test)</span>
@@ -207,7 +207,7 @@
                                 </div>
 
                                 <div class="alert alert-light border mb-0" style="font-size: 12px;">
-                                    <i class="fa fa-info-circle text-primary mr-1"></i> Ongkos kirim, resi pengiriman, dan penjemputan kurir otomatis diintegrasikan dengan <strong>Biteship API</strong>.
+                                    <i class="fa fa-info-circle text-primary mr-1"></i> Ongkos kirim, nomor resi pengiriman, dan penjemputan kurir otomatis terhubung dengan sistem ekspedisi terpadu.
                                 </div>
                             </div>
                         </div>

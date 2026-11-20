@@ -192,7 +192,7 @@
 			<ul class="topbar-mobile">
 				<li>
 					<div class="left-top-bar">
-						Ongkir Real-Time &amp; Resi Otomatis Biteship &bull; Midtrans Snap
+						Ongkir Real-Time &amp; Resi Otomatis &bull; Pembayaran Online Instan
 					</div>
 				</li>
 				<li>

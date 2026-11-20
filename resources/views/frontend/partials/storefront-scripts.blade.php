@@ -1593,7 +1593,7 @@
 
 			var $wrap = $('#ro-courier-options-wrap');
 			var $list = $('#ro-courier-options-list');
-			$list.html('<div class="text-muted small py-3 text-center"><i class="zmdi zmdi-spinner zmdi-hc-spin text-muted mr-1"></i> Menghubungi Biteship &amp; menghitung tarif kurir real-time...</div>');
+			$list.html('<div class="text-muted small py-3 text-center"><i class="zmdi zmdi-spinner zmdi-hc-spin text-muted mr-1"></i> Menghitung tarif kurir pengiriman real-time...</div>');
 			$wrap.show();
 
 			$.post('{{ route("frontend.shipping.cost") }}', {
@@ -1642,7 +1642,7 @@
 				// Pilih otomatis layanan termurah (urutan pertama) agar pembeli langsung melihat total
 				$list.find('input[name="ro_courier"]').first().prop('checked', true).trigger('change');
 			}).fail(function() {
-				$list.html('<div class="text-danger small py-2 px-3 border border-danger rounded" style="background: #fff5f5;"><i class="zmdi zmdi-alert-circle mr-1"></i> Gagal menghubungi layanan Biteship. Periksa koneksi dan coba lagi.</div>');
+				$list.html('<div class="text-danger small py-2 px-3 border border-danger rounded" style="background: #fff5f5;"><i class="zmdi zmdi-alert-circle mr-1"></i> Gagal memuat tarif kurir pengiriman. Periksa koneksi dan coba lagi.</div>');
 			});
 		}
 

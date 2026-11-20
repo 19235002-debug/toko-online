@@ -749,7 +749,7 @@
 
 										@if($order->status == 'pending' && $order->metode_pembayaran == 'midtrans' && $order->snap_token)
 										<button type="button" class="btn btn-primary btn-sm font-weight-bold px-3 mr-2" onclick="payWithSnap('{{ $order->snap_token }}', '{{ $order->kode_order }}')" style="background-color: #717fe0; border: none; border-radius: 6px;">
-											<i class="fa fa-credit-card mr-1"></i> Bayar Sekarang via Midtrans
+											<i class="fa fa-credit-card mr-1"></i> Bayar Sekarang (Online)
 										</button>
 										@endif
 
@@ -962,7 +962,7 @@
 
 		function payWithSnap(snapToken, kodeOrder) {
 			if (typeof window.snap === 'undefined') {
-				alert('Modul pembayaran Midtrans sedang dimuat, silakan coba sesaat lagi.');
+				alert('Modul pembayaran sedang dimuat, silakan coba sesaat lagi.');
 				return;
 			}
 

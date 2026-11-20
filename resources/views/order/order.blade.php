@@ -68,7 +68,7 @@
                     </h3>
                     <div class="card-tools d-flex flex-wrap align-items-center" style="gap: 8px;">
                         <span class="badge rounded-pill px-3 py-1.5 d-inline-flex align-items-center" style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; font-size: 12px; gap: 6px;">
-                            <i class="fa fa-wallet"></i> Saldo Biteship: <strong>{{ $biteshipWallet['formatted'] ?? 'Rp 250.000' }}</strong>
+                            <i class="fa fa-wallet"></i> Saldo Pengiriman: <strong>{{ $biteshipWallet['formatted'] ?? 'Rp 250.000' }}</strong>
                             @if(!empty($biteshipWallet['is_demo']))
                                 <span class="badge badge-light border text-muted" style="font-size: 9.5px;">Sandbox</span>
                             @endif
@@ -76,8 +76,8 @@
                         @if(($counts['dikirim'] ?? 0) > 0)
                         <form action="{{ route('order.syncShipping') }}" method="POST" class="d-inline">
                             @csrf
-                            <button type="submit" class="btn btn-outline-primary btn-sm btn-action" title="Cek status resi ekspedisi via Biteship">
-                                <i class="fa-solid fa-truck-fast mr-1"></i> Sinkron Resi Biteship
+                            <button type="submit" class="btn btn-outline-primary btn-sm btn-action" title="Cek status resi ekspedisi terkini">
+                                <i class="fa-solid fa-truck-fast mr-1"></i> Sinkron Status Resi
                             </button>
                         </form>
                         @endif
@@ -107,7 +107,7 @@
                         <div class="col-md-4 col-lg-3">
                             <select name="metode" class="form-control" onchange="this.form.submit()">
                                 <option value="all" {{ ($metode ?? 'all') === 'all' ? 'selected' : '' }}>Semua Metode Bayar</option>
-                                <option value="midtrans" {{ ($metode ?? '') === 'midtrans' ? 'selected' : '' }}>Midtrans (Online)</option>
+                                <option value="midtrans" {{ ($metode ?? '') === 'midtrans' ? 'selected' : '' }}>Pembayaran Online</option>
                                 <option value="cod" {{ ($metode ?? '') === 'cod' ? 'selected' : '' }}>COD (Bayar di Tempat)</option>
                             </select>
                         </div>
@@ -153,7 +153,7 @@
                                         </div>
                                         @if($data->metode_pembayaran == 'midtrans')
                                             <span class="badge rounded-pill px-2 py-0.5 mt-1" style="background: #eef2ff; color: #465fff; font-size: 11px;">
-                                                <i class="fa fa-credit-card mr-1"></i> Midtrans
+                                                <i class="fa fa-credit-card mr-1"></i> Online (Instan)
                                             </span>
                                         @else
                                             <span class="badge rounded-pill px-2 py-0.5 mt-1 text-uppercase" style="background: #e0f2fe; color: #0284c7; font-size: 11px;">
@@ -199,7 +199,7 @@
                                             @elseif(in_array($data->status, ['diproses', 'pending']))
                                                 <form action="{{ route('order.requestPickup', $data->id_order) }}" method="POST" class="d-inline">
                                                     @csrf
-                                                    <button type="submit" class="btn btn-warning btn-sm btn-action" title="Request Pick-up Kurir (Biteship)">
+                                                    <button type="submit" class="btn btn-warning btn-sm btn-action" title="Request Pick-up Kurir">
                                                         <i class="fa-solid fa-truck-pickup"></i>
                                                     </button>
                                                 </form>

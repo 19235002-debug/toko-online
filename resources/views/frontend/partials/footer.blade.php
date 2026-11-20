@@ -123,7 +123,7 @@
 				</p>
 				<div class="d-flex flex-wrap" style="gap: 8px;">
 					<span class="footer-pay-pill">
-						<i class="fa fa-shield-alt text-info"></i> Midtrans (QRIS / VA)
+						<i class="fa fa-shield-alt text-info"></i> Pembayaran Online (QRIS &amp; VA)
 					</span>
 					<span class="footer-pay-pill">
 						<i class="fa fa-money-bill-wave text-success"></i> COD (Bayar di Tempat)

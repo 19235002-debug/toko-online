@@ -233,7 +233,7 @@
 									<div class="checkout-section-title mt-2">
 										<span class="checkout-step-badge">2</span> Alamat & Wilayah Pengiriman
 										<span class="badge badge-light border text-secondary ml-auto font-weight-bold px-2 py-1" style="font-size: 11px;">
-											<i class="zmdi zmdi-truck text-primary mr-1"></i> Biteship Otomatis
+											<i class="zmdi zmdi-truck text-primary mr-1"></i> Kurir Otomatis
 										</span>
 									</div>
 
@@ -268,7 +268,7 @@
 									</div>
 								</div>
 
-								<!-- Card 2: Layanan Kurir Pengiriman (Biteship) -->
+								<!-- Card 2: Layanan Kurir Pengiriman -->
 								<div class="checkout-card-box mb-3">
 									<div class="checkout-section-title">
 										<span class="checkout-step-badge">3</span> Layanan Kurir Pengiriman <span class="text-danger ml-1">*</span>
@@ -292,7 +292,7 @@
 											<i class="zmdi zmdi-truck" style="font-size: 18px;"></i>
 										</div>
 										<div>
-											Pilih <strong>kelurahan / kecamatan tujuan</strong> di atas untuk memuat pilihan kurir dan tarif ongkir real-time via Biteship.
+											Pilih <strong>kelurahan / kecamatan tujuan</strong> di atas untuk memuat pilihan kurir dan kalkulasi ongkir otomatis real-time.
 										</div>
 									</div>
 								</div>
@@ -311,7 +311,7 @@
 												<div class="d-flex align-items-center mb-1" style="gap: 8px;">
 													<span class="badge badge-primary px-2 py-1" style="font-size: 10px; border-radius: 6px;">Otomatis &amp; Cepat</span>
 												</div>
-												<span class="font-weight-bold text-dark" style="font-size: 13.5px;">Midtrans (Online / Instan)</span>
+												<span class="font-weight-bold text-dark" style="font-size: 13.5px;">Pembayaran Online (Instan)</span>
 												<small class="text-muted mt-1" style="font-size: 11px; line-height: 1.4;">QRIS, GoPay, OVO, ShopeePay &amp; Virtual Account (BCA, Mandiri, BNI, BRI)</small>
 											</label>
 										</div>
@@ -476,7 +476,7 @@
 
 					<div class="d-flex flex-column" style="gap: 8px;">
 						<button type="button" id="receipt-reopen-snap-btn" onclick="reopenReceiptSnap()" class="btn btn-warning text-white font-weight-bold py-2" style="display: none; border-radius: 12px;">
-							Lanjutkan Pembayaran Midtrans
+							Lanjutkan Pembayaran Online
 						</button>
 						<a id="receipt-track-btn" href="#" class="btn btn-primary font-weight-bold py-2" style="border-radius: 12px; background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); border: none; box-shadow: 0 8px 18px rgba(79, 70, 229, 0.25);">
 							Lacak Status Pesanan

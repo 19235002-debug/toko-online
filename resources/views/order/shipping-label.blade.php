@@ -307,7 +307,7 @@
 
         <!-- Footer Info -->
         <div class="footer-note">
-            <div>Auto-Generated via Biteship Logistics</div>
+            <div>Auto-Generated Official Shipping Label</div>
             <div>{{ now()->format('d/m/Y H:i') }} WIB</div>
         </div>
     </div>
