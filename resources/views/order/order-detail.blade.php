@@ -203,15 +203,13 @@
                                             <span>Cetak Label Thermal (100x150)</span>
                                         </a>
 
-                                        @if($order->biteship_tracking_url)
-                                            <!-- Lacak Pengiriman Real-Time -->
-                                            <a href="{{ $order->biteship_tracking_url }}" target="_blank"
-                                               class="btn btn-outline-info btn-sm logistics-action-btn font-weight-bold"
-                                               title="Pantau posisi kurir secara real-time">
-                                                <i class="fa-solid fa-location-arrow"></i>
-                                                <span>Lacak Pengiriman Real-Time</span>
-                                            </a>
-                                        @endif
+                                        <!-- Lacak Pengiriman Real-Time (Halaman Lacak Toko) -->
+                                        <a href="{{ url('/lacak-pesanan?order=' . $order->kode_order) }}" target="_blank"
+                                           class="btn btn-outline-info btn-sm logistics-action-btn font-weight-bold"
+                                           title="Buka halaman pelacakan pesanan real-time">
+                                            <i class="fa-solid fa-location-arrow"></i>
+                                            <span>Lacak Pengiriman Real-Time</span>
+                                        </a>
 
                                         @php
                                             $cleanHp = preg_replace('/[^0-9]/', '', $order->no_hp);
