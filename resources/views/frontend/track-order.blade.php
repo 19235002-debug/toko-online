@@ -29,43 +29,6 @@
 	<link rel="stylesheet" type="text/css" href="{{ asset('frontend-assets/css/main.css') }}">
 <!--===============================================================================================-->
 	<style>
-		/* Header & User Dropdown Styling */
-		.js-user-dropdown {
-			position: relative !important;
-			display: inline-flex !important;
-			align-items: center !important;
-		}
-		.js-user-dropdown .js-user-dropdown-toggle {
-			display: inline-flex !important;
-			align-items: center !important;
-			cursor: pointer;
-			user-select: none;
-		}
-		.js-user-dropdown .user-dropdown-menu {
-			display: none;
-			position: absolute !important;
-			top: calc(100% + 14px) !important;
-			right: 0 !important;
-			left: auto !important;
-			transform: none !important;
-			box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
-			border: 1px solid #e9ecef !important;
-			border-radius: 10px !important;
-			min-width: 220px !important;
-			background-color: #ffffff !important;
-			z-index: 1200 !important;
-			margin: 0 !important;
-			padding: 8px 0;
-		}
-		.js-user-dropdown.show > .user-dropdown-menu {
-			display: block !important;
-			animation: fadeInMenu 0.15s ease-out;
-		}
-		@keyframes fadeInMenu {
-			from { opacity: 0; transform: translateY(-4px); }
-			to { opacity: 1; transform: translateY(0); }
-		}
-
 		/* Modern Track Order Page */
 		.track-hero-modern {
 			background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 55%, #f5f3ff 100%);

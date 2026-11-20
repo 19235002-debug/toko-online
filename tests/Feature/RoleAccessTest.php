@@ -144,4 +144,29 @@ class RoleAccessTest extends TestCase
         $filtered = $this->get('/shop?sort=termurah&search=Shirt');
         $filtered->assertStatus(200);
     }
+
+    public function test_frontend_shows_tailadmin_consistent_profile_dropdown()
+    {
+        $user = User::where('role', 'user')->first();
+        $response = $this->actingAs($user)->get('/');
+        $response->assertStatus(200);
+        $response->assertSee('ta-frontend-trigger');
+        $response->assertSee('ta-frontend-status-dot');
+        $response->assertSee('ta-frontend-dropdown-menu');
+        $response->assertSee('Pesanan Saya');
+        $response->assertSee('Logout');
+
+        // Test simple-navbar page
+        $resOrders = $this->actingAs($user)->get('/pesanan-saya');
+        $resOrders->assertStatus(200);
+        $resOrders->assertSee('ta-frontend-trigger');
+        $resOrders->assertSee('ta-frontend-dropdown-menu');
+
+        // Test admin view on frontend
+        $admin = User::where('role', 'admin')->first();
+        $resAdmin = $this->actingAs($admin)->get('/');
+        $resAdmin->assertStatus(200);
+        $resAdmin->assertSee('Dashboard Admin');
+        $resAdmin->assertSee('Administrator');
+    }
 }

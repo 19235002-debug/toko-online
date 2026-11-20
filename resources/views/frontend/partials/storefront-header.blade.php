@@ -41,72 +41,7 @@
 							<i class="zmdi zmdi-favorite-outline"></i>
 						</a>
 
-						@auth
-						<div class="js-user-dropdown p-l-18">
-							<a href="javascript:void(0);" class="js-user-dropdown-toggle dis-flex align-items-center cl2 hov-cl1 trans-04 pointer" style="color: #333 !important; text-decoration: none; cursor: pointer;">
-								@if(auth()->user()->user_image)
-									<img src="{{ asset('storage/' . auth()->user()->user_image) }}" alt="{{ auth()->user()->nama }}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #cbd5e1;">
-								@else
-									<i class="zmdi zmdi-account" style="color: #333 !important; font-size: 26px;"></i>
-								@endif
-								<span class="d-none d-md-inline-block font-weight-bold ml-2 text-dark" style="color: #333 !important; font-size: 14px; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-									{{ auth()->user()->nama }}
-								</span>
-								<i class="fa fa-angle-down ml-1 text-muted" style="font-size: 13px;"></i>
-							</a>
-							<div class="user-dropdown-menu shadow border-0" style="min-width: 255px;">
-								<div class="px-3 py-2 border-bottom mb-2 bg-light rounded-top d-flex align-items-center" style="gap: 12px;">
-									@if(auth()->user()->user_image)
-										<img src="{{ asset('storage/' . auth()->user()->user_image) }}" alt="{{ auth()->user()->nama }}" class="rounded-circle border shadow-sm flex-shrink-0" style="width: 50px; height: 50px; object-fit: cover;">
-									@else
-										<div class="rounded-circle d-flex align-items-center justify-content-center text-white font-weight-bold flex-shrink-0" style="width: 50px; height: 50px; background: linear-gradient(135deg, #4f46e5, #717fe0); font-size: 18px;">
-											{{ strtoupper(substr(auth()->user()->nama, 0, 1)) }}
-										</div>
-									@endif
-									<div style="min-width: 0; flex: 1; text-align: left;">
-										<div class="font-weight-bold text-dark text-truncate" style="font-size: 14px; line-height: 1.25;">{{ auth()->user()->nama }}</div>
-										<div class="small text-muted text-truncate" style="font-size: 12px;">{{ auth()->user()->email }}</div>
-										<span class="badge {{ auth()->user()->role === 'admin' ? 'badge-danger' : 'badge-primary' }} mt-1 font-weight-normal" style="font-size: 10.5px;">
-											{{ auth()->user()->role === 'admin' ? 'Administrator' : 'Member' }}
-										</span>
-									</div>
-								</div>
-
-								@if(in_array(auth()->user()->role, ['admin', 'superadmin']))
-								<a class="dropdown-item py-2 px-3 d-flex align-items-center text-dark" href="/dashboard" style="font-size: 13px;">
-									<i class="fa-solid fa-gauge-high mr-2 text-secondary" style="width: 18px;"></i> Dashboard Admin
-								</a>
-								<a class="dropdown-item py-2 px-3 d-flex align-items-center text-dark" href="{{ route('profile.edit') }}" style="font-size: 13px;">
-									<i class="fa-solid fa-user-gear mr-2 text-secondary" style="width: 18px;"></i> Profil Admin
-								</a>
-								@else
-								<a class="dropdown-item py-2 px-3 d-flex align-items-center text-dark" href="/pesanan-saya" style="font-size: 13px;">
-									<i class="fa-solid fa-shopping-bag mr-2 text-secondary" style="width: 18px;"></i> Pesanan Saya
-								</a>
-								<a class="dropdown-item py-2 px-3 d-flex align-items-center text-dark" href="{{ route('profile.edit') }}" style="font-size: 13px;">
-									<i class="fa-solid fa-user-gear mr-2 text-secondary" style="width: 18px;"></i> Profil Saya
-								</a>
-								@endif
-
-								<div class="dropdown-divider my-1"></div>
-								<a class="dropdown-item py-2 px-3 d-flex align-items-center text-danger font-weight-bold" href="javascript:void(0);" onclick="document.getElementById('logout-form-desktop').submit();" style="font-size: 13px; color: #dc3545 !important;">
-									<i class="fa-solid fa-right-from-bracket mr-2 text-danger" style="width: 18px;"></i> Logout
-								</a>
-								<form id="logout-form-desktop" action="/logout" method="POST" style="display: none;">
-									@csrf
-								</form>
-							</div>
-						</div>
-						@else
-						<div class="p-l-18">
-							<a href="/login" class="dis-flex align-items-center cl2 hov-cl1 trans-04 pointer" title="Masuk / Daftar" style="color: #333 !important; text-decoration: none;">
-								<i class="zmdi zmdi-account-o" style="color: #333 !important; font-size: 26px;"></i>
-								<span class="d-none d-md-inline-block font-weight-bold ml-2 text-dark" style="color: #333 !important; font-size: 14px;">
-									Masuk / Daftar
-								</span>
-							</a>
-						</div>
-						@endauth
+						@include('frontend.partials.user-dropdown', ['idSuffix' => 'desktop', 'extraClass' => 'p-l-18'])
 					</div>
 				</nav>
 			</div>
@@ -133,51 +68,7 @@
 					<i class="zmdi zmdi-favorite-outline"></i>
 				</a>
 
-				@auth
-				<div class="js-user-dropdown">
-					<a href="javascript:void(0);" class="js-user-dropdown-toggle dis-flex align-items-center cl2 hov-cl1 trans-04 p-r-11 p-l-10 pointer" style="color: #333 !important; text-decoration: none;">
-						<i class="zmdi zmdi-account" style="color: #333 !important; font-size: 24px;"></i>
-						<i class="fa fa-angle-down ml-1 text-muted" style="font-size: 11px;"></i>
-					</a>
-					<div class="user-dropdown-menu shadow border-0 py-2" style="min-width: 200px;">
-						<div class="px-3 py-2 text-center border-bottom mb-2 bg-light rounded-top">
-							<div class="font-weight-bold text-dark text-truncate" style="font-size: 14px;">{{ auth()->user()->nama }}</div>
-							<span class="badge {{ auth()->user()->role === 'admin' ? 'badge-danger' : 'badge-primary' }} mt-1 font-weight-normal">
-								{{ auth()->user()->role === 'admin' ? 'Administrator' : 'Member' }}
-							</span>
-						</div>
-						@if(in_array(auth()->user()->role, ['admin', 'superadmin']))
-						<a class="dropdown-item py-2 px-3 d-flex align-items-center text-dark" href="/dashboard" style="font-size: 13px;">
-							<i class="fa-solid fa-gauge-high mr-2 text-secondary" style="width: 18px;"></i> Dashboard Admin
-						</a>
-						<a class="dropdown-item py-2 px-3 d-flex align-items-center text-dark" href="{{ route('profile.edit') }}" style="font-size: 13px;">
-							<i class="fa-solid fa-user-gear mr-2 text-secondary" style="width: 18px;"></i> Profil Admin
-						</a>
-						@else
-						<a class="dropdown-item py-2 px-3 d-flex align-items-center text-dark" href="/pesanan-saya" style="font-size: 13px;">
-							<i class="fa-solid fa-shopping-bag mr-2 text-secondary" style="width: 18px;"></i> Pesanan Saya
-						</a>
-						<a class="dropdown-item py-2 px-3 d-flex align-items-center text-dark" href="{{ route('profile.edit') }}" style="font-size: 13px;">
-							<i class="fa-solid fa-user-gear mr-2 text-secondary" style="width: 18px;"></i> Profil Saya
-						</a>
-						<a class="dropdown-item py-2 px-3 d-flex align-items-center text-dark" href="/lacak-pesanan" style="font-size: 13px;">
-							<i class="fa-solid fa-truck mr-2 text-secondary" style="width: 18px;"></i> Lacak Pesanan
-						</a>
-						@endif
-						<div class="dropdown-divider my-1"></div>
-						<a class="dropdown-item py-2 px-3 d-flex align-items-center text-danger font-weight-bold" href="javascript:void(0);" onclick="document.getElementById('logout-form-mobile-header').submit();" style="font-size: 13px; color: #dc3545 !important;">
-							<i class="fa-solid fa-right-from-bracket mr-2 text-danger" style="width: 18px;"></i> Logout
-						</a>
-						<form id="logout-form-mobile-header" action="/logout" method="POST" style="display: none;">
-							@csrf
-						</form>
-					</div>
-				</div>
-				@else
-				<a href="/login" class="dis-block icon-header-item cl2 hov-cl1 trans-04 p-r-11 p-l-10 pointer" title="Masuk / Daftar" style="color: #333 !important;">
-					<i class="zmdi zmdi-account-o" style="color: #333 !important; font-size: 24px;"></i>
-				</a>
-				@endauth
+				@include('frontend.partials.user-dropdown', ['idSuffix' => 'mobile', 'extraClass' => 'm-l-5'])
 			</div>
 
 			<div class="btn-show-menu-mobile hamburger hamburger--squeeze">
@@ -207,7 +98,7 @@
 								<i class="fa fa-shopping-bag mr-1"></i> Pesanan Saya
 							</a>
 							@endif
-							<a href="javascript:void(0)" onclick="document.getElementById('logout-form-mobile').submit();" class="flex-c-m p-lr-10 trans-04 text-danger">
+							<a href="javascript:void(0)" class="js-frontend-logout-btn flex-c-m p-lr-10 trans-04 text-danger font-weight-bold" data-form-id="logout-form-mobile">
 								<i class="fa fa-sign-out mr-1"></i> Logout
 							</a>
 							<form id="logout-form-mobile" action="/logout" method="POST" style="display: none;">@csrf</form>

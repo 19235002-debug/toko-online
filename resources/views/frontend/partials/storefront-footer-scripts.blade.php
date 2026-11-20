@@ -96,6 +96,44 @@
 			}
 		});
 
+		// SweetAlert Confirmation for Frontend Logout (Consistent with Backend)
+		$(document).on('click', '.js-frontend-logout-btn', function(e) {
+			e.preventDefault();
+			var formId = $(this).data('form-id') || 'logout-form-desktop';
+			var form = document.getElementById(formId);
+
+			if (typeof Swal !== 'undefined' && typeof Swal.fire === 'function') {
+				Swal.fire({
+					title: 'Apakah Anda yakin?',
+					text: "Tindakan ini tidak dapat dibatalkan!",
+					icon: 'warning',
+					showCancelButton: true,
+					confirmButtonColor: '#465fff',
+					cancelButtonColor: '#6c757d',
+					confirmButtonText: 'Ya, Logout',
+					cancelButtonText: 'Batal'
+				}).then(function(result) {
+					if (result.isConfirmed && form) {
+						form.submit();
+					}
+				});
+			} else if (typeof swal === 'function') {
+				swal({
+					title: "Apakah Anda yakin?",
+					text: "Tindakan ini tidak dapat dibatalkan!",
+					icon: "warning",
+					buttons: ["Batal", "Ya, Logout"],
+					dangerMode: true,
+				}).then(function(willLogout) {
+					if (willLogout && form) {
+						form.submit();
+					}
+				});
+			} else if (form) {
+				form.submit();
+			}
+		});
+
 		var CART_KEY = window.isLoggedIn ? ('cozastore_cart_u_' + window.currentUserId) : null;
 		var WISHLIST_KEY = window.isLoggedIn ? ('cozastore_wishlist_u_' + window.currentUserId) : null;
 

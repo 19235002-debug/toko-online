@@ -1,3 +1,5 @@
+@include('frontend.partials.user-dropdown-styles')
+
 <style>
 	/* Global Responsive Guard (Desktop, Tablet, Mobile) */
 	html, body {
