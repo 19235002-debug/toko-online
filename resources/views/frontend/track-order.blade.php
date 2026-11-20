@@ -564,8 +564,8 @@
 
 											<div class="d-flex justify-content-between py-2 border-bottom">
 												<span class="text-muted">Metode Pembayaran:</span>
-												<span class="font-weight-bold text-uppercase" style="color: #717fe0;">
-													{{ $order->metode_pembayaran }}
+												<span class="font-weight-bold" style="color: #717fe0;">
+													{{ $order->metode_pembayaran == 'midtrans' ? 'Pembayaran Online (Instan)' : strtoupper($order->metode_pembayaran) }}
 												</span>
 											</div>
 
@@ -582,7 +582,7 @@
 									<div class="col-md-6 m-b-20">
 										<div class="track-info-panel">
 											<h6 class="font-weight-bold text-dark m-b-15">
-												<i class="fa fa-map-marker-alt text-danger mr-1"></i> Tujuan Pengiriman
+												<i class="zmdi zmdi-pin text-primary mr-1"></i> Tujuan Pengiriman
 											</h6>
 
 											<div class="mb-2">
@@ -602,7 +602,7 @@
 												</p>
 												@if($order->destination_label)
 												<small class="text-primary font-weight-bold d-block mt-1">
-													<i class="fa fa-map-pin mr-1"></i> {{ $order->destination_label }}
+													<i class="zmdi zmdi-pin mr-1"></i> {{ $order->destination_label }}
 												</small>
 												@endif
 											</div>
