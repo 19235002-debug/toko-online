@@ -52,7 +52,7 @@
                             @if(in_array($order->status, ['diproses', 'pending']) && $order->status !== 'dibatalkan')
                             <div class="mb-3 p-3 rounded" style="background: linear-gradient(135deg, #fef3c7, #fef9c3); border: 1px solid #fde047;">
                                 <div class="d-flex align-items-center mb-2">
-                                    <i class="fa-solid fa-bolt text-warning mr-2" style="font-size: 16px;"></i>
+                                    <i class="fa-solid fa-truck-fast text-primary mr-2" style="font-size: 16px;"></i>
                                     <strong style="color: #92400e; font-size: 13px;">Resi Otomatis &amp; Penjemputan Biteship</strong>
                                 </div>
                                 <p class="small text-muted mb-2">Klik tombol di bawah untuk membuat resi otomatis dan menjadwalkan kurir <strong>{{ $order->ekspedisi ?: 'JNE/J&T' }}</strong> menjemput paket ke toko.</p>

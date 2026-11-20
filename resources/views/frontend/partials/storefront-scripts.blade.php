@@ -341,7 +341,7 @@
 				var sub = item.qty * item.harga;
 				totalQty += item.qty;
 				totalPrice += sub;
-				var varText = item.variasi ? '<div class="mt-1"><span class="badge badge-light border text-primary px-2 py-0" style="font-size: 11px; border-radius: 6px;"><i class="fa fa-tag mr-1"></i>' + escapeHtml(item.variasi) + '</span></div>' : '';
+				var varText = item.variasi ? '<div class="mt-1"><span class="badge badge-light border text-muted px-2 py-0" style="font-size: 11px; border-radius: 6px;"><i class="zmdi zmdi-label mr-1 text-muted"></i>' + escapeHtml(item.variasi) + '</span></div>' : '';
 
 				var rowHtml =
 					'<div class="d-flex align-items-center p-2 mb-2 rounded border" style="background: #ffffff; gap: 12px; transition: all 0.2s ease;">' +
@@ -382,7 +382,7 @@
 		function loadAvailableVouchers(subtotal) {
 			var $wrap = $('#checkout-available-vouchers-wrap');
 			var $list = $('#checkout-available-vouchers-list');
-			$list.html('<div class="text-muted small py-1"><i class="fa fa-spinner fa-spin mr-1"></i> Memuat voucher...</div>');
+			$list.html('<div class="text-muted small py-1"><i class="zmdi zmdi-spinner zmdi-hc-spin text-muted mr-1"></i> Memuat voucher...</div>');
 			$wrap.show();
 
 			$.get('{{ route("frontend.voucher.available") }}', { subtotal: subtotal }, function(res) {
@@ -1588,12 +1588,12 @@
 			$('#checkout_destination_id').val(destId);
 			$('#checkout_destination_postal_code').val(postalCode || '');
 			$('#checkout_destination_label').val(destLabel);
-			$('#ro-selected-dest-badge').html('<i class="fa fa-check-circle mr-1 text-success"></i><strong>Wilayah Terpilih:</strong> ' + escapeHtml(destLabel)).show();
+			$('#ro-selected-dest-badge').html('<i class="zmdi zmdi-check-circle mr-1 text-success"></i> <strong>Wilayah Terpilih:</strong> ' + escapeHtml(destLabel)).show();
 			$('#ro-shipping-hint').attr('style', 'display: none !important;');
 
 			var $wrap = $('#ro-courier-options-wrap');
 			var $list = $('#ro-courier-options-list');
-			$list.html('<div class="text-muted small py-3 text-center"><i class="fa fa-spinner fa-spin text-primary mr-1"></i> Menghubungi Biteship &amp; menghitung tarif kurir real-time...</div>');
+			$list.html('<div class="text-muted small py-3 text-center"><i class="zmdi zmdi-spinner zmdi-hc-spin text-muted mr-1"></i> Menghubungi Biteship &amp; menghitung tarif kurir real-time...</div>');
 			$wrap.show();
 
 			$.post('{{ route("frontend.shipping.cost") }}', {
@@ -1603,11 +1603,11 @@
 				total_qty: window.currentCheckoutTotalQty || 1
 			}, function(res) {
 				if (!res || !res.options || res.options.length === 0) {
-					$list.html('<div class="text-danger small py-2 px-3 border border-danger rounded" style="background: #fff5f5;"><i class="fa fa-exclamation-triangle mr-1"></i> Layanan kurir tidak tersedia untuk wilayah ini. Silakan coba wilayah alternatif.</div>');
+					$list.html('<div class="text-danger small py-2 px-3 border border-danger rounded" style="background: #fff5f5;"><i class="zmdi zmdi-alert-triangle mr-1"></i> Layanan kurir tidak tersedia untuk wilayah ini. Silakan coba wilayah alternatif.</div>');
 					return;
 				}
 				var beratKg = ((res.weight_grams || 0) / 1000).toFixed(2).replace(/\.?0+$/, '');
-				var html = '<div class="d-flex align-items-center justify-content-between mb-2 text-muted" style="font-size: 11px;"><span><i class="fa fa-cube mr-1 text-primary"></i> Estimasi Berat Paket: <strong>' + beratKg + ' kg</strong></span><span>Tersedia <strong>' + res.options.length + ' opsi pengiriman</strong></span></div>';
+				var html = '<div class="d-flex align-items-center justify-content-between mb-2 text-muted" style="font-size: 11px;"><span><i class="zmdi zmdi-truck mr-1 text-muted"></i> Estimasi Berat Paket: <strong>' + beratKg + ' kg</strong></span><span>Tersedia <strong>' + res.options.length + ' opsi pengiriman</strong></span></div>';
 				res.options.forEach(function(opt) {
 					var courierLower = (opt.code || '').toLowerCase();
 					var badgeColor = '#6366f1';
@@ -1631,7 +1631,7 @@
 										'<span class="badge badge-light border text-muted font-weight-normal" style="font-size: 10.5px;">' + escapeHtml(opt.description || opt.courier_name) + '</span>' +
 									'</div>' +
 									'<div class="text-muted mt-1" style="font-size: 11px;">' +
-										'<i class="fa fa-clock-o text-primary mr-1"></i>Estimasi tiba: <strong class="text-dark">' + escapeHtml(opt.etd) + '</strong>' +
+										'<i class="zmdi zmdi-time text-muted mr-1"></i>Estimasi tiba: <strong class="text-dark">' + escapeHtml(opt.etd) + '</strong>' +
 									'</div>' +
 								'</div>' +
 							'</div>' +
@@ -1642,7 +1642,7 @@
 				// Pilih otomatis layanan termurah (urutan pertama) agar pembeli langsung melihat total
 				$list.find('input[name="ro_courier"]').first().prop('checked', true).trigger('change');
 			}).fail(function() {
-				$list.html('<div class="text-danger small py-2 px-3 border border-danger rounded" style="background: #fff5f5;"><i class="fa fa-exclamation-circle mr-1"></i> Gagal menghubungi layanan Biteship. Periksa koneksi dan coba lagi.</div>');
+				$list.html('<div class="text-danger small py-2 px-3 border border-danger rounded" style="background: #fff5f5;"><i class="zmdi zmdi-alert-circle mr-1"></i> Gagal menghubungi layanan Biteship. Periksa koneksi dan coba lagi.</div>');
 			});
 		}
 
