@@ -468,6 +468,12 @@ class FrontendController extends Controller
                 OrderController::syncOrderStatusWithMidtrans($order);
                 $order->refresh();
             }
+
+            // Jika pesanan belum dibayar dan sudah melewati batas 3 hari, otomatis batalkan
+            if ($order && $order->status === 'pending' && !$order->paid_at && $order->metode_pembayaran !== 'cod' && $order->created_at <= now()->subDays(3)) {
+                OrderController::cancelUnpaidOrders(3);
+                $order->refresh();
+            }
         }
 
         // Riwayat perjalanan paket dari Biteship / kurir (jika resi sudah diinput admin / otomatis terbit)
@@ -533,6 +539,9 @@ class FrontendController extends Controller
         foreach ($pendingOrders as $pOrder) {
             OrderController::syncOrderStatusWithMidtrans($pOrder);
         }
+
+        // Batalkan pesanan belum dibayar yang melewati batas 3 hari
+        OrderController::cancelUnpaidOrders(3);
 
         $orders = Order::with('items.barang')
             ->where(function ($q) use ($user) {
@@ -1170,10 +1179,10 @@ class FrontendController extends Controller
                             'address' => substr($fullAddress, 0, 200),
                         ],
                     ],
-                    // Batas waktu pembayaran: lewat 24 jam otomatis expire & pesanan dibatalkan via webhook
+                    // Batas waktu pembayaran: lewat 3 hari otomatis expire & pesanan dibatalkan
                     'expiry' => [
-                        'unit' => 'hours',
-                        'duration' => 24,
+                        'unit' => 'days',
+                        'duration' => 3,
                     ],
                 ];
 
@@ -1427,8 +1436,8 @@ class FrontendController extends Controller
                     'phone' => $order->no_hp,
                 ],
                 'expiry' => [
-                    'unit' => 'hours',
-                    'duration' => 24,
+                    'unit' => 'days',
+                    'duration' => 3,
                 ],
             ];
 

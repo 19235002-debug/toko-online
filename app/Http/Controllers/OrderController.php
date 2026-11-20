@@ -21,6 +21,9 @@ class OrderController extends Controller
      */
     public function index(Request $request)
     {
+        // Batalkan pesanan belum dibayar yang melewati batas 3 hari
+        self::cancelUnpaidOrders(3);
+
         // Otomatis sinkronkan pesanan Midtrans pending & resi RajaOngkir yang sudah terkirim
         self::syncPendingMidtransOrders(15);
         self::syncShippedOrdersWithRajaOngkir(10);
@@ -166,6 +169,59 @@ class OrderController extends Controller
         $order = Order::with('items.barang')->where('id_order', $id)->firstOrFail();
 
         return view('order.print-invoice', compact('order'));
+    }
+
+    /**
+     * Batalkan otomatis pesanan yang belum dibayar dalam batas waktu tertentu (default 3 hari).
+     * Mengembalikan stok produk, variasi, dan kuota voucher.
+     */
+    public static function cancelUnpaidOrders(int $days = 3, bool $includeCod = false): int
+    {
+        try {
+            $expiredThreshold = now()->subDays($days);
+            $query = Order::with('items')
+                ->where('status', 'pending')
+                ->whereNull('paid_at')
+                ->where('created_at', '<=', $expiredThreshold);
+
+            if (!$includeCod) {
+                $query->where(function ($q) {
+                    $q->whereNull('metode_pembayaran')
+                      ->orWhere('metode_pembayaran', '!=', 'cod');
+                });
+            }
+
+            $expiredOrders = $query->get();
+            $cancelledCount = 0;
+
+            foreach ($expiredOrders as $order) {
+                \Illuminate\Support\Facades\DB::transaction(function () use ($order) {
+                    $order->status = 'dibatalkan';
+                    $order->cancelled_at = now();
+                    $note = ' [Dibatalkan otomatis: tidak ada pembayaran dalam 3 hari]';
+                    $order->catatan = trim(($order->catatan ?? '') . $note);
+                    $order->save();
+
+                    self::restoreOrderStockAndVoucher($order);
+                });
+
+                if ($order->metode_pembayaran === 'midtrans' && !empty($order->snap_token)) {
+                    try {
+                        \Midtrans\Config::$serverKey = config('midtrans.server_key');
+                        \Midtrans\Config::$isProduction = (bool) config('midtrans.is_production', false);
+                        \Midtrans\Transaction::cancel($order->midtrans_order_id ?: $order->kode_order);
+                    } catch (\Throwable $e) {
+                        // Abaikan jika order belum terdaftar atau sudah dibatalkan
+                    }
+                }
+
+                $cancelledCount++;
+            }
+
+            return $cancelledCount;
+        } catch (\Throwable $e) {
+            return 0;
+        }
     }
 
     /**

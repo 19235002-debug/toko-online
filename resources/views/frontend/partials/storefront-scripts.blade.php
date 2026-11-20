@@ -727,7 +727,7 @@
 				$iconWrap.css({ background: '#f59e0b', boxShadow: '0 12px 28px rgba(245, 158, 11, 0.28)' });
 				$icon.attr('class', 'fa fa-clock-o');
 				$badge.html('<span class="badge badge-warning text-white px-3 py-1" style="border-radius: 999px; font-size: 11.5px;">Menunggu Pembayaran</span>');
-				$sub.text('Selesaikan pembayaran dalam 24 jam. Status diperbarui otomatis.');
+				$sub.text('Selesaikan pembayaran dalam 3 hari. Status diperbarui otomatis.');
 				startSnapLivePolling(res);
 			}
 
