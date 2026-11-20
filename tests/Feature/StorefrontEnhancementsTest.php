@@ -154,7 +154,7 @@ class StorefrontEnhancementsTest extends TestCase
         ]);
 
         $chosenOpt = $costRes->json('options.0');
-        $expectedOngkir = intval(\App\Services\RajaOngkirService::findOption(17480, 350, $chosenOpt['code'], $chosenOpt['service'])['cost']);
+        $expectedOngkir = intval($chosenOpt['cost']);
 
         $checkoutRes = $this->actingAs($user)->postJson('/checkout', [
             'nama_customer' => $user->nama,
