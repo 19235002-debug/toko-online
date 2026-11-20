@@ -739,9 +739,9 @@
 									</div>
 									<div class="d-flex gap-2 mt-2 mt-md-0">
 										@if($order->status == 'dikirim')
-										<form action="{{ route('frontend.track.confirm', $order->kode_order) }}" method="POST" class="d-inline mr-2" onsubmit="return confirm('Apakah paket pesanan Anda sudah sampai dan diterima dengan baik? Status pesanan akan diubah menjadi Selesai.')">
+										<form action="{{ route('frontend.track.confirm', $order->kode_order) }}" method="POST" class="d-inline mr-2" id="form-confirm-track-received">
 											@csrf
-											<button type="submit" class="btn btn-success btn-sm font-weight-bold px-3" style="border-radius: 6px;">
+											<button type="button" class="btn btn-success btn-sm font-weight-bold px-3 js-btn-confirm-received" style="border-radius: 6px;">
 												<i class="fa fa-check-circle mr-1"></i> Pesanan Sudah Diterima
 											</button>
 										</form>
@@ -1065,6 +1065,40 @@
 				});
 			});
 		}
+
+		$(document).on('click', '.js-btn-confirm-received', function(e) {
+			e.preventDefault();
+			var form = $(this).closest('form');
+			if (typeof swal !== 'undefined') {
+				swal({
+					title: "Pesanan Sudah Diterima?",
+					text: "Apakah paket pesanan Anda sudah sampai dan diterima dengan baik? Status pesanan akan diselesaikan.",
+					icon: "info",
+					buttons: {
+						cancel: {
+							text: "Belum",
+							value: null,
+							visible: true,
+							className: "btn btn-secondary",
+							closeModal: true,
+						},
+						confirm: {
+							text: "Ya, Sudah Diterima!",
+							value: true,
+							visible: true,
+							className: "btn btn-success font-weight-bold",
+							closeModal: false
+						}
+					}
+				}).then(function(isConfirm) {
+					if (isConfirm) {
+						form.submit();
+					}
+				});
+			} else {
+				form.submit();
+			}
+		});
 	</script>
 </body>
 </html>

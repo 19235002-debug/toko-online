@@ -228,13 +228,12 @@
                                         </a>
 
                                         <!-- Tombol Cepat: Simulasi Paket Tiba & Selesai -->
-                                        <form action="{{ route('order.updateStatus', $order->id_order) }}" method="POST" class="mt-1">
+                                        <form action="{{ route('order.updateStatus', $order->id_order) }}" method="POST" class="mt-1" id="form-complete-order">
                                             @csrf
                                             @method('PUT')
                                             <input type="hidden" name="status" value="selesai">
-                                            <button type="submit" class="btn btn-success btn-sm logistics-action-btn font-weight-bold shadow-sm"
-                                                    style="background: #059669; border-color: #059669;"
-                                                    onclick="return confirm('Simulasikan paket telah sampai dan selesaikan pesanan ini?')">
+                                            <button type="button" class="btn btn-success btn-sm logistics-action-btn font-weight-bold shadow-sm js-btn-complete-order"
+                                                    style="background: #059669; border-color: #059669;">
                                                 <i class="fa-solid fa-circle-check"></i>
                                                 <span>Tandai Paket Sampai (Selesai)</span>
                                             </button>
@@ -251,9 +250,9 @@
                                     <p class="small text-muted mb-2.5" style="font-size: 12px; line-height: 1.4;">
                                         Pesanan sudah siap dikirim. Buat resi otomatis dan jadwalkan kurir <strong>{{ $order->ekspedisi ?: 'Ekspedisi' }}</strong> menjemput paket ke toko.
                                     </p>
-                                    <form action="{{ route('order.requestPickup', $order->id_order) }}" method="POST">
+                                    <form action="{{ route('order.requestPickup', $order->id_order) }}" method="POST" id="form-request-pickup">
                                         @csrf
-                                        <button type="submit" class="btn btn-warning btn-block font-weight-bold text-dark py-2 shadow-sm logistics-action-btn"
+                                        <button type="button" class="btn btn-warning btn-block font-weight-bold text-dark py-2 shadow-sm logistics-action-btn js-btn-request-pickup"
                                                 style="background: #f59e0b; border-color: #f59e0b; font-size: 13.5px;">
                                             <i class="fa-solid fa-truck-pickup mr-1"></i>
                                             <span>Request Pick-up Kurir</span>
@@ -279,7 +278,7 @@
                             @endif
 
                             <!-- Form Update Status Manual -->
-                            <form action="{{ route('order.updateStatus', $order->id_order) }}" method="POST">
+                            <form action="{{ route('order.updateStatus', $order->id_order) }}" method="POST" id="form-update-status-manual">
                                 @csrf
                                 @method('PUT')
                                 @php
@@ -687,6 +686,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Tombol Salin Nomor Resi & Kode Order
     $(document).on('click', '.js-copy-btn', function(e) {
         e.preventDefault();
         e.stopPropagation();
@@ -713,6 +713,138 @@ document.addEventListener('DOMContentLoaded', function() {
                 icon: 'success',
                 title: 'Tersalin: ' + text
             });
+        }
+    });
+
+    // Alert Modern SweetAlert2: Tandai Paket Sampai (Selesai)
+    $(document).on('click', '.js-btn-complete-order', function(e) {
+        e.preventDefault();
+        var form = $(this).closest('form');
+        
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Konfirmasi Paket Diterima?',
+                html: `
+                    <div style="font-size: 14px; color: #475569; line-height: 1.6; margin-top: 8px;">
+                        Simulasikan bahwa paket untuk pesanan <strong>#{{ $order->kode_order }}</strong> telah sampai di alamat tujuan dan diterima oleh pembeli.
+                    </div>
+                    <div style="margin-top: 14px; padding: 12px 14px; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; font-size: 13px; color: #065f46; text-align: left; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-circle-check text-success" style="font-size: 16px;"></i>
+                        <span>Status pesanan akan diubah menjadi <strong style="color: #047857;">Selesai</strong>.</span>
+                    </div>
+                `,
+                icon: 'question',
+                iconColor: '#059669',
+                showCancelButton: true,
+                confirmButtonColor: '#059669',
+                cancelButtonColor: '#94a3b8',
+                confirmButtonText: '<i class="fa-solid fa-check mr-1.5"></i> Ya, Paket Diterima!',
+                cancelButtonText: 'Batal',
+                reverseButtons: true,
+                focusConfirm: false
+            }).then(function(result) {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'Memperbarui Status...',
+                        text: 'Menyimpan status pesanan menjadi Selesai',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false,
+                        didOpen: function() {
+                            Swal.showLoading();
+                        }
+                    });
+                    form.submit();
+                }
+            });
+        } else {
+            form.submit();
+        }
+    });
+
+    // Alert Modern SweetAlert2: Request Pick-up Kurir
+    $(document).on('click', '.js-btn-request-pickup', function(e) {
+        e.preventDefault();
+        var form = $(this).closest('form');
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Request Penjemputan Kurir?',
+                html: `
+                    <div style="font-size: 14px; color: #475569; line-height: 1.6; margin-top: 8px;">
+                        Jadwalkan kurir <strong>{{ $order->ekspedisi ?: 'Ekspedisi' }}</strong> untuk menjemput paket pesanan <strong>#{{ $order->kode_order }}</strong>.
+                    </div>
+                    <div style="margin-top: 14px; padding: 12px 14px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; font-size: 13px; color: #92400e; text-align: left; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-truck-fast text-warning" style="font-size: 16px;"></i>
+                        <span>Nomor resi resmi akan dibuat otomatis &amp; status diubah ke <strong>Dikirim</strong>.</span>
+                    </div>
+                `,
+                icon: 'info',
+                iconColor: '#d97706',
+                showCancelButton: true,
+                confirmButtonColor: '#d97706',
+                cancelButtonColor: '#94a3b8',
+                confirmButtonText: '<i class="fa-solid fa-truck-pickup mr-1.5"></i> Ya, Request Kurir',
+                cancelButtonText: 'Batal',
+                reverseButtons: true,
+                focusConfirm: false
+            }).then(function(result) {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'Memproses Penjemputan...',
+                        text: 'Menghubungkan ke layanan ekspedisi...',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false,
+                        didOpen: function() {
+                            Swal.showLoading();
+                        }
+                    });
+                    form.submit();
+                }
+            });
+        } else {
+            form.submit();
+        }
+    });
+    // Alert Modern SweetAlert2: Update Status Manual (jika Dibatalkan)
+    $(document).on('submit', '#form-update-status-manual', function(e) {
+        var newStatus = $('#status').val();
+        if (newStatus === 'dibatalkan' && !$(this).data('confirmed')) {
+            e.preventDefault();
+            var form = this;
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Batalkan Pesanan Ini?',
+                    text: 'Pesanan akan dibatalkan dan stok produk akan otomatis dikembalikan ke inventaris.',
+                    icon: 'warning',
+                    iconColor: '#dc2626',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc2626',
+                    cancelButtonColor: '#94a3b8',
+                    confirmButtonText: '<i class="fa-solid fa-ban mr-1.5"></i> Ya, Batalkan Pesanan',
+                    cancelButtonText: 'Kembali',
+                    reverseButtons: true,
+                    focusConfirm: false
+                }).then(function(result) {
+                    if (result.isConfirmed) {
+                        $(form).data('confirmed', true);
+                        Swal.fire({
+                            title: 'Memperbarui Status...',
+                            text: 'Membatalkan pesanan dan mengembalikan stok...',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            showConfirmButton: false,
+                            didOpen: function() {
+                                Swal.showLoading();
+                            }
+                        });
+                        form.submit();
+                    }
+                });
+            } else {
+                form.submit();
+            }
         }
     });
 });

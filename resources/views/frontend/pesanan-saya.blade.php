@@ -375,18 +375,18 @@
 							@endif
 
 							@if($o->status === 'pending')
-							<form action="{{ route('frontend.order.cancel', $o->kode_order) }}" method="POST" onsubmit="return confirm('Batalkan pesanan {{ $o->kode_order }}? Stok produk akan otomatis dikembalikan.');" style="display: inline-block;">
+							<form action="{{ route('frontend.order.cancel', $o->kode_order) }}" method="POST" class="js-form-cancel-order" data-code="{{ $o->kode_order }}" style="display: inline-block;">
 								@csrf
-								<button type="submit" class="btn btn-sm btn-outline-danger px-3" style="border-radius: 10px;">
+								<button type="button" class="btn btn-sm btn-outline-danger px-3 js-btn-cancel-order" style="border-radius: 10px;">
 									<i class="fa fa-times mr-1"></i> Batalkan
 								</button>
 							</form>
 							@endif
 
 							@if($o->status === 'dikirim')
-							<form action="{{ route('frontend.track.confirm', $o->kode_order) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin pesanan sudah diterima dengan baik?');" style="display: inline-block;">
+							<form action="{{ route('frontend.track.confirm', $o->kode_order) }}" method="POST" class="js-form-confirm-order" data-code="{{ $o->kode_order }}" style="display: inline-block;">
 								@csrf
-								<button type="submit" class="btn btn-sm btn-modern-primary px-3">
+								<button type="button" class="btn btn-sm btn-modern-primary px-3 js-btn-confirm-order">
 									<i class="fa fa-check mr-1"></i> Konfirmasi Diterima
 								</button>
 							</form>
@@ -491,6 +491,49 @@
 				}
 			});
 		}
+
+		$(document).on('click', '.js-btn-cancel-order', function(e) {
+			e.preventDefault();
+			var form = $(this).closest('form');
+			var kode = form.data('code') || '';
+			Swal.fire({
+				title: 'Batalkan Pesanan?',
+				text: 'Apakah Anda yakin ingin membatalkan pesanan ' + kode + '? Stok produk akan otomatis dikembalikan.',
+				icon: 'warning',
+				iconColor: '#ef4444',
+				showCancelButton: true,
+				confirmButtonColor: '#ef4444',
+				cancelButtonColor: '#94a3b8',
+				confirmButtonText: '<i class="fa fa-times mr-1"></i> Ya, Batalkan',
+				cancelButtonText: 'Kembali',
+				reverseButtons: true
+			}).then((result) => {
+				if (result.isConfirmed) {
+					form.submit();
+				}
+			});
+		});
+
+		$(document).on('click', '.js-btn-confirm-order', function(e) {
+			e.preventDefault();
+			var form = $(this).closest('form');
+			Swal.fire({
+				title: 'Konfirmasi Pesanan Diterima?',
+				text: 'Apakah paket pesanan Anda sudah sampai dan diterima dengan baik?',
+				icon: 'question',
+				iconColor: '#10b981',
+				showCancelButton: true,
+				confirmButtonColor: '#10b981',
+				cancelButtonColor: '#94a3b8',
+				confirmButtonText: '<i class="fa fa-check mr-1"></i> Ya, Sudah Diterima',
+				cancelButtonText: 'Belum',
+				reverseButtons: true
+			}).then((result) => {
+				if (result.isConfirmed) {
+					form.submit();
+				}
+			});
+		});
 	</script>
 </body>
 </html>
