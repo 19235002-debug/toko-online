@@ -635,7 +635,8 @@
 
 			$('#receipt-amount').text(res.total_formatted || 'Rp 0');
 			$('#receipt-kode').text(res.kode_order || '-');
-			$('#receipt-metode').text((res.metode_pembayaran || '-').toUpperCase());
+			var metodeLabel = (res.metode_pembayaran === 'midtrans' || res.metode_pembayaran === 'online') ? 'Pembayaran Online (Instan)' : (res.metode_pembayaran || '-').toUpperCase();
+			$('#receipt-metode').text(metodeLabel);
 			$('#receipt-kurir').text(res.kurir || '-');
 			$('#receipt-track-btn').attr('href', res.track_url || ('/lacak-pesanan?order=' + encodeURIComponent(res.kode_order || '')));
 			$('#receipt-invoice-btn').attr('href', res.invoice_url || ('/pesanan-saya/' + encodeURIComponent(res.kode_order || '') + '/invoice'));

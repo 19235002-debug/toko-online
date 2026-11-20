@@ -466,7 +466,7 @@
 						</div>
 						<div class="d-flex justify-content-between py-2 small border-bottom">
 							<span class="text-muted">Metode Pembayaran</span>
-							<strong id="receipt-metode" class="text-dark text-uppercase">-</strong>
+							<strong id="receipt-metode" class="text-dark">-</strong>
 						</div>
 						<div class="d-flex justify-content-between py-2 small">
 							<span class="text-muted">Kurir Pengiriman</span>
@@ -475,8 +475,8 @@
 					</div>
 
 					<div class="d-flex flex-column" style="gap: 8px;">
-						<button type="button" id="receipt-reopen-snap-btn" onclick="reopenReceiptSnap()" class="btn btn-warning text-white font-weight-bold py-2" style="display: none; border-radius: 12px;">
-							Lanjutkan Pembayaran Online
+						<button type="button" id="receipt-reopen-snap-btn" onclick="reopenReceiptSnap()" class="btn btn-warning text-white font-weight-bold py-2" style="display: none; border-radius: 12px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border: none;">
+							<i class="zmdi zmdi-card mr-1"></i> Ganti Metode Pembayaran
 						</button>
 						<a id="receipt-track-btn" href="#" class="btn btn-primary font-weight-bold py-2" style="border-radius: 12px; background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); border: none; box-shadow: 0 8px 18px rgba(79, 70, 229, 0.25);">
 							Lacak Status Pesanan
