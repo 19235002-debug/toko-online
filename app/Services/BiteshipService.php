@@ -61,12 +61,27 @@ class BiteshipService
                         if (is_array($areas) && count($areas) > 0) {
                             $list = [];
                             foreach (array_slice($areas, 0, $limit) as $item) {
+                                $kelurahan = (string) ($item['administrative_division_level_4_name'] ?? '');
+                                $kecamatan = (string) ($item['administrative_division_level_3_name'] ?? $item['district']['name'] ?? '');
+                                $kota = (string) ($item['administrative_division_level_2_name'] ?? $item['city']['name'] ?? '');
+                                $provinsi = (string) ($item['administrative_division_level_1_name'] ?? $item['state']['name'] ?? '');
+                                $postal = (string) ($item['postal_code'] ?? '');
+
+                                if ($kelurahan !== '') {
+                                    $label = "Kel. {$kelurahan}, Kec. {$kecamatan}, {$kota}, {$provinsi}" . ($postal ? ". {$postal}" : '');
+                                } else {
+                                    $rawName = (string) ($item['name'] ?? '');
+                                    $label = !empty($rawName) ? $rawName : "{$kecamatan}, {$kota}, {$provinsi}. {$postal}";
+                                }
+
                                 $list[] = [
                                     'id' => (string) ($item['id'] ?? ''),
-                                    'label' => (string) ($item['name'] ?? ''),
-                                    'postal_code' => $item['postal_code'] ?? null,
-                                    'city' => (string) ($item['city']['name'] ?? ''),
-                                    'province' => (string) ($item['state']['name'] ?? ''),
+                                    'label' => $label,
+                                    'kelurahan' => $kelurahan,
+                                    'kecamatan' => $kecamatan,
+                                    'postal_code' => $postal,
+                                    'city' => $kota,
+                                    'province' => $provinsi,
                                 ];
                             }
                             return $list;
@@ -567,73 +582,270 @@ class BiteshipService
     {
         $k = mb_strtolower($keyword);
         $dataset = [
+            // Grogol Petamburan (Jakarta Barat) - Lengkap Seluruh Kelurahan
             [
-                'id' => 'IDNP6IDNC148IDND843IDZ12250',
-                'label' => 'Pesanggrahan, Jakarta Selatan, DKI Jakarta. 12250',
-                'postal_code' => 12250,
-                'city' => 'Jakarta Selatan',
-                'province' => 'DKI Jakarta',
-            ],
-            [
-                'id' => 'IDNP6IDNC147IDND839IDZ10270',
-                'label' => 'Gelora, Tanah Abang, Jakarta Pusat, DKI Jakarta. 10270',
-                'postal_code' => 10270,
-                'city' => 'Jakarta Pusat',
-                'province' => 'DKI Jakarta',
-            ],
-            [
-                'id' => 'IDNP6IDNC149IDND845IDZ11470',
-                'label' => 'Grogol Petamburan, Jakarta Barat, DKI Jakarta. 11470',
+                'id' => 'IDNP6IDNC149IDND845IDS11470A',
+                'label' => 'Kel. Tanjung Duren Utara, Kec. Grogol Petamburan, Jakarta Barat, DKI Jakarta. 11470',
+                'kelurahan' => 'Tanjung Duren Utara',
+                'kecamatan' => 'Grogol Petamburan',
                 'postal_code' => 11470,
                 'city' => 'Jakarta Barat',
                 'province' => 'DKI Jakarta',
             ],
             [
-                'id' => 'IDNP9IDNC157IDND889IDZ40115',
-                'label' => 'Coblong, Kota Bandung, Jawa Barat. 40115',
-                'postal_code' => 40115,
+                'id' => 'IDNP6IDNC149IDND845IDS11470B',
+                'label' => 'Kel. Tanjung Duren Selatan, Kec. Grogol Petamburan, Jakarta Barat, DKI Jakarta. 11470',
+                'kelurahan' => 'Tanjung Duren Selatan',
+                'kecamatan' => 'Grogol Petamburan',
+                'postal_code' => 11470,
+                'city' => 'Jakarta Barat',
+                'province' => 'DKI Jakarta',
+            ],
+            [
+                'id' => 'IDNP6IDNC149IDND845IDS11450',
+                'label' => 'Kel. Grogol, Kec. Grogol Petamburan, Jakarta Barat, DKI Jakarta. 11450',
+                'kelurahan' => 'Grogol',
+                'kecamatan' => 'Grogol Petamburan',
+                'postal_code' => 11450,
+                'city' => 'Jakarta Barat',
+                'province' => 'DKI Jakarta',
+            ],
+            [
+                'id' => 'IDNP6IDNC149IDND845IDS11440',
+                'label' => 'Kel. Tomang, Kec. Grogol Petamburan, Jakarta Barat, DKI Jakarta. 11440',
+                'kelurahan' => 'Tomang',
+                'kecamatan' => 'Grogol Petamburan',
+                'postal_code' => 11440,
+                'city' => 'Jakarta Barat',
+                'province' => 'DKI Jakarta',
+            ],
+            [
+                'id' => 'IDNP6IDNC149IDND845IDS11460A',
+                'label' => 'Kel. Jelambar, Kec. Grogol Petamburan, Jakarta Barat, DKI Jakarta. 11460',
+                'kelurahan' => 'Jelambar',
+                'kecamatan' => 'Grogol Petamburan',
+                'postal_code' => 11460,
+                'city' => 'Jakarta Barat',
+                'province' => 'DKI Jakarta',
+            ],
+            [
+                'id' => 'IDNP6IDNC149IDND845IDS11460B',
+                'label' => 'Kel. Jelambar Baru, Kec. Grogol Petamburan, Jakarta Barat, DKI Jakarta. 11460',
+                'kelurahan' => 'Jelambar Baru',
+                'kecamatan' => 'Grogol Petamburan',
+                'postal_code' => 11460,
+                'city' => 'Jakarta Barat',
+                'province' => 'DKI Jakarta',
+            ],
+            [
+                'id' => 'IDNP6IDNC149IDND845IDS11460C',
+                'label' => 'Kel. Wijaya Kusuma, Kec. Grogol Petamburan, Jakarta Barat, DKI Jakarta. 11460',
+                'kelurahan' => 'Wijaya Kusuma',
+                'kecamatan' => 'Grogol Petamburan',
+                'postal_code' => 11460,
+                'city' => 'Jakarta Barat',
+                'province' => 'DKI Jakarta',
+            ],
+
+            // Jakarta Barat Lainnya
+            [
+                'id' => 'IDNP6IDNC149IDND846IDS11480',
+                'label' => 'Kel. Kemanggisan, Kec. Palmerah, Jakarta Barat, DKI Jakarta. 11480',
+                'kelurahan' => 'Kemanggisan',
+                'kecamatan' => 'Palmerah',
+                'postal_code' => 11480,
+                'city' => 'Jakarta Barat',
+                'province' => 'DKI Jakarta',
+            ],
+            [
+                'id' => 'IDNP6IDNC149IDND846IDS11410',
+                'label' => 'Kel. Slipi, Kec. Palmerah, Jakarta Barat, DKI Jakarta. 11410',
+                'kelurahan' => 'Slipi',
+                'kecamatan' => 'Palmerah',
+                'postal_code' => 11410,
+                'city' => 'Jakarta Barat',
+                'province' => 'DKI Jakarta',
+            ],
+            [
+                'id' => 'IDNP6IDNC149IDND847IDS11530',
+                'label' => 'Kel. Kebon Jeruk, Kec. Kebon Jeruk, Jakarta Barat, DKI Jakarta. 11530',
+                'kelurahan' => 'Kebon Jeruk',
+                'kecamatan' => 'Kebon Jeruk',
+                'postal_code' => 11530,
+                'city' => 'Jakarta Barat',
+                'province' => 'DKI Jakarta',
+            ],
+            [
+                'id' => 'IDNP6IDNC149IDND848IDS11610',
+                'label' => 'Kel. Kembangan Selatan, Kec. Kembangan, Jakarta Barat, DKI Jakarta. 11610',
+                'kelurahan' => 'Kembangan Selatan',
+                'kecamatan' => 'Kembangan',
+                'postal_code' => 11610,
+                'city' => 'Jakarta Barat',
+                'province' => 'DKI Jakarta',
+            ],
+
+            // Jakarta Pusat
+            [
+                'id' => 'IDNP6IDNC147IDND839IDS10270',
+                'label' => 'Kel. Gelora, Kec. Tanah Abang, Jakarta Pusat, DKI Jakarta. 10270',
+                'kelurahan' => 'Gelora',
+                'kecamatan' => 'Tanah Abang',
+                'postal_code' => 10270,
+                'city' => 'Jakarta Pusat',
+                'province' => 'DKI Jakarta',
+            ],
+            [
+                'id' => 'IDNP6IDNC147IDND840IDS10110',
+                'label' => 'Kel. Gambir, Kec. Gambir, Jakarta Pusat, DKI Jakarta. 10110',
+                'kelurahan' => 'Gambir',
+                'kecamatan' => 'Gambir',
+                'postal_code' => 10110,
+                'city' => 'Jakarta Pusat',
+                'province' => 'DKI Jakarta',
+            ],
+            [
+                'id' => 'IDNP6IDNC147IDND841IDS10310',
+                'label' => 'Kel. Menteng, Kec. Menteng, Jakarta Pusat, DKI Jakarta. 10310',
+                'kelurahan' => 'Menteng',
+                'kecamatan' => 'Menteng',
+                'postal_code' => 10310,
+                'city' => 'Jakarta Pusat',
+                'province' => 'DKI Jakarta',
+            ],
+
+            // Jakarta Selatan
+            [
+                'id' => 'IDNP6IDNC148IDND843IDS12250',
+                'label' => 'Kel. Pesanggrahan, Kec. Pesanggrahan, Jakarta Selatan, DKI Jakarta. 12250',
+                'kelurahan' => 'Pesanggrahan',
+                'kecamatan' => 'Pesanggrahan',
+                'postal_code' => 12250,
+                'city' => 'Jakarta Selatan',
+                'province' => 'DKI Jakarta',
+            ],
+            [
+                'id' => 'IDNP6IDNC148IDND843IDS12260',
+                'label' => 'Kel. Petukangan Utara, Kec. Pesanggrahan, Jakarta Selatan, DKI Jakarta. 12260',
+                'kelurahan' => 'Petukangan Utara',
+                'kecamatan' => 'Pesanggrahan',
+                'postal_code' => 12260,
+                'city' => 'Jakarta Selatan',
+                'province' => 'DKI Jakarta',
+            ],
+            [
+                'id' => 'IDNP6IDNC148IDND843IDS12330',
+                'label' => 'Kel. Bintaro, Kec. Pesanggrahan, Jakarta Selatan, DKI Jakarta. 12330',
+                'kelurahan' => 'Bintaro',
+                'kecamatan' => 'Pesanggrahan',
+                'postal_code' => 12330,
+                'city' => 'Jakarta Selatan',
+                'province' => 'DKI Jakarta',
+            ],
+            [
+                'id' => 'IDNP6IDNC148IDND844IDS12190',
+                'label' => 'Kel. Senayan, Kec. Kebayoran Baru, Jakarta Selatan, DKI Jakarta. 12190',
+                'kelurahan' => 'Senayan',
+                'kecamatan' => 'Kebayoran Baru',
+                'postal_code' => 12190,
+                'city' => 'Jakarta Selatan',
+                'province' => 'DKI Jakarta',
+            ],
+            [
+                'id' => 'IDNP6IDNC148IDND845IDS12430',
+                'label' => 'Kel. Cilandak Barat, Kec. Cilandak, Jakarta Selatan, DKI Jakarta. 12430',
+                'kelurahan' => 'Cilandak Barat',
+                'kecamatan' => 'Cilandak',
+                'postal_code' => 12430,
+                'city' => 'Jakarta Selatan',
+                'province' => 'DKI Jakarta',
+            ],
+
+            // Kota Bandung
+            [
+                'id' => 'IDNP9IDNC157IDND889IDS40135',
+                'label' => 'Kel. Dago, Kec. Coblong, Kota Bandung, Jawa Barat. 40135',
+                'kelurahan' => 'Dago',
+                'kecamatan' => 'Coblong',
+                'postal_code' => 40135,
                 'city' => 'Kota Bandung',
                 'province' => 'Jawa Barat',
             ],
             [
-                'id' => 'IDNP10IDNC163IDND912IDZ60241',
-                'label' => 'Wonokromo, Kota Surabaya, Jawa Timur. 60241',
+                'id' => 'IDNP9IDNC157IDND889IDS40132',
+                'label' => 'Kel. Lebak Siliwangi, Kec. Coblong, Kota Bandung, Jawa Barat. 40132',
+                'kelurahan' => 'Lebak Siliwangi',
+                'kecamatan' => 'Coblong',
+                'postal_code' => 40132,
+                'city' => 'Kota Bandung',
+                'province' => 'Jawa Barat',
+            ],
+
+            // Kota Surabaya
+            [
+                'id' => 'IDNP10IDNC163IDND912IDS60241',
+                'label' => 'Kel. Darmo, Kec. Wonokromo, Kota Surabaya, Jawa Timur. 60241',
+                'kelurahan' => 'Darmo',
+                'kecamatan' => 'Wonokromo',
                 'postal_code' => 60241,
                 'city' => 'Kota Surabaya',
                 'province' => 'Jawa Timur',
             ],
             [
-                'id' => 'IDNP10IDNC160IDND901IDZ50134',
-                'label' => 'Semarang Barat, Kota Semarang, Jawa Tengah. 50134',
-                'postal_code' => 50134,
+                'id' => 'IDNP10IDNC163IDND912IDS60242',
+                'label' => 'Kel. Sawunggaling, Kec. Wonokromo, Kota Surabaya, Jawa Timur. 60242',
+                'kelurahan' => 'Sawunggaling',
+                'kecamatan' => 'Wonokromo',
+                'postal_code' => 60242,
+                'city' => 'Kota Surabaya',
+                'province' => 'Jawa Timur',
+            ],
+
+            // Kota Semarang & Yogyakarta
+            [
+                'id' => 'IDNP10IDNC160IDND901IDS50141',
+                'label' => 'Kel. Krobokan, Kec. Semarang Barat, Kota Semarang, Jawa Tengah. 50141',
+                'kelurahan' => 'Krobokan',
+                'kecamatan' => 'Semarang Barat',
+                'postal_code' => 50141,
                 'city' => 'Kota Semarang',
                 'province' => 'Jawa Tengah',
             ],
             [
-                'id' => 'IDNP14IDNC188IDND1012IDZ55281',
-                'label' => 'Depok, Sleman, DI Yogyakarta. 55281',
+                'id' => 'IDNP14IDNC188IDND1012IDS55281',
+                'label' => 'Kel. Caturtunggal, Kec. Depok, Kab. Sleman, DI Yogyakarta. 55281',
+                'kelurahan' => 'Caturtunggal',
+                'kecamatan' => 'Depok',
                 'postal_code' => 55281,
                 'city' => 'Kabupaten Sleman',
                 'province' => 'DI Yogyakarta',
             ],
+
+            // Medan, Denpasar, Makassar
             [
-                'id' => 'IDNP2IDNC111IDND542IDZ20112',
-                'label' => 'Medan Kota, Kota Medan, Sumatera Utara. 20112',
-                'postal_code' => 20112,
+                'id' => 'IDNP2IDNC111IDND542IDS20111',
+                'label' => 'Kel. Kesawan, Kec. Medan Barat, Kota Medan, Sumatera Utara. 20111',
+                'kelurahan' => 'Kesawan',
+                'kecamatan' => 'Medan Barat',
+                'postal_code' => 20111,
                 'city' => 'Kota Medan',
                 'province' => 'Sumatera Utara',
             ],
             [
-                'id' => 'IDNP17IDNC201IDND1120IDZ80232',
-                'label' => 'Denpasar Selatan, Kota Denpasar, Bali. 80232',
-                'postal_code' => 80232,
+                'id' => 'IDNP17IDNC201IDND1120IDS80225',
+                'label' => 'Kel. Panjer, Kec. Denpasar Selatan, Kota Denpasar, Bali. 80225',
+                'kelurahan' => 'Panjer',
+                'kecamatan' => 'Denpasar Selatan',
+                'postal_code' => 80225,
                 'city' => 'Kota Denpasar',
                 'province' => 'Bali',
             ],
             [
-                'id' => 'IDNP23IDNC230IDND1280IDZ90111',
-                'label' => 'Ujung Pandang, Kota Makassar, Sulawesi Selatan. 90111',
-                'postal_code' => 90111,
+                'id' => 'IDNP23IDNC230IDND1280IDS90113',
+                'label' => 'Kel. Losari, Kec. Ujung Pandang, Kota Makassar, Sulawesi Selatan. 90113',
+                'kelurahan' => 'Losari',
+                'kecamatan' => 'Ujung Pandang',
+                'postal_code' => 90113,
                 'city' => 'Kota Makassar',
                 'province' => 'Sulawesi Selatan',
             ],

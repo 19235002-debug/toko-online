@@ -29,6 +29,12 @@ class BiteshipIntegrationTest extends TestCase
         $this->assertNotEmpty($areas);
         $this->assertArrayHasKey('id', $areas[0]);
         $this->assertArrayHasKey('label', $areas[0]);
+        $this->assertStringContainsString('Kel.', $areas[0]['label']);
+
+        // Pastikan pencarian Grogol Petamburan mencakup kelurahan (misal Tanjung Duren / Tomang)
+        $grogol = BiteshipService::searchArea('Grogol', 5);
+        $this->assertNotEmpty($grogol);
+        $this->assertStringContainsString('Kel.', $grogol[0]['label']);
 
         $res = $this->actingAs($user)->getJson('/shipping/destinations?q=Pesanggrahan');
         $res->assertStatus(200)->assertJsonPath('success', true);
