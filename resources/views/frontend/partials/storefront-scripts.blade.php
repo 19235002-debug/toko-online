@@ -328,6 +328,7 @@
 
 			var totalAkhir = Math.max(0, subtotal - discount) + ongkir;
 			$('#checkout-summary-total-price').text(formatRupiah(totalAkhir));
+			$('#checkout-footer-total-preview').text(formatRupiah(totalAkhir));
 		}
 
 		function openCheckoutModalWithCart(cart) {
@@ -340,17 +341,17 @@
 				var sub = item.qty * item.harga;
 				totalQty += item.qty;
 				totalPrice += sub;
-				var varText = item.variasi ? '<div class="small text-primary font-weight-bold" style="font-size: 0.75rem;"><i class="fa fa-tag mr-1"></i>' + escapeHtml(item.variasi) + '</div>' : '';
+				var varText = item.variasi ? '<div class="mt-1"><span class="badge badge-light border text-primary px-2 py-0" style="font-size: 11px; border-radius: 6px;"><i class="fa fa-tag mr-1"></i>' + escapeHtml(item.variasi) + '</span></div>' : '';
 
 				var rowHtml =
-					'<div class="d-flex align-items-center m-b-10 pb-2 border-bottom">' +
-						'<img src="' + escapeHtml(item.gambar) + '" alt="' + escapeHtml(item.nama) + '" style="width: 42px; height: 42px; object-fit: cover; border-radius: 4px; margin-right: 10px;">' +
+					'<div class="d-flex align-items-center p-2 mb-2 rounded border" style="background: #ffffff; gap: 12px; transition: all 0.2s ease;">' +
+						'<img src="' + escapeHtml(item.gambar) + '" alt="' + escapeHtml(item.nama) + '" style="width: 48px; height: 48px; object-fit: cover; border-radius: 10px; border: 1px solid #eef2f6; flex-shrink: 0;">' +
 						'<div style="flex: 1; min-width: 0;">' +
-							'<div class="font-weight-bold text-truncate" style="font-size: 0.85rem;" title="' + escapeHtml(item.nama) + '">' + escapeHtml(item.nama) + '</div>' +
+							'<div class="font-weight-bold text-dark text-truncate" style="font-size: 0.88rem; line-height: 1.35;" title="' + escapeHtml(item.nama) + '">' + escapeHtml(item.nama) + '</div>' +
 							varText +
-							'<div class="text-muted" style="font-size: 0.78rem;">' + item.qty + 'x @ ' + formatRupiah(item.harga) + '</div>' +
+							'<div class="text-muted mt-1" style="font-size: 11.5px;">' + item.qty + 'x &bull; ' + formatRupiah(item.harga) + '</div>' +
 						'</div>' +
-						'<div class="font-weight-bold text-dark text-right" style="font-size: 0.85rem; min-width: 75px;">' +
+						'<div class="font-weight-bold text-dark text-right" style="font-size: 0.9rem; min-width: 75px; white-space: nowrap;">' +
 							formatRupiah(sub) +
 						'</div>' +
 					'</div>';
@@ -369,6 +370,7 @@
 			resetRajaOngkirSelection(true);
 
 			$('#checkout-summary-total-qty').text(totalQty + ' pcs');
+			$('#checkout-summary-badge-qty').text(totalQty + ' Item');
 			$('#checkout-summary-subtotal').text(formatRupiah(totalPrice));
 			recalculateCheckoutTotals();
 			loadAvailableVouchers(totalPrice);
@@ -391,19 +393,19 @@
 				var html = '';
 				res.vouchers.forEach(function(v) {
 					var minInfo = v.minimal_belanja > 0 ? 'Min. belanja ' + formatRupiah(v.minimal_belanja) : 'Tanpa minimal belanja';
-					var expInfo = v.tanggal_selesai ? ' • s/d ' + escapeHtml(v.tanggal_selesai) : '';
+					var expInfo = v.tanggal_selesai ? ' &bull; s/d ' + escapeHtml(v.tanggal_selesai) : '';
 					var actionBtn = v.eligible
-						? '<button type="button" onclick="applyVoucher(\'' + escapeHtml(v.kode_voucher) + '\')" class="btn btn-xs btn-primary font-weight-bold px-2 py-1" style="border-radius: 6px; font-size: 11px; white-space: nowrap;">Pakai</button>'
-						: '<span class="badge badge-light border text-muted" style="font-size: 10px; white-space: nowrap;">Tambah ' + formatRupiah(v.kurang) + '</span>';
+						? '<button type="button" onclick="applyVoucher(\'' + escapeHtml(v.kode_voucher) + '\')" class="btn btn-xs btn-primary font-weight-bold px-3 py-1" style="border-radius: 8px; font-size: 11px; white-space: nowrap; background: linear-gradient(135deg, #717fe0 0%, #5865d6 100%); border: none;">Pakai</button>'
+						: '<span class="badge badge-light border text-muted px-2 py-1" style="font-size: 10px; white-space: nowrap; border-radius: 6px;">Kurang ' + formatRupiah(v.kurang) + '</span>';
 
 					html +=
-						'<div class="d-flex justify-content-between align-items-center p-2 border rounded" style="background: #f8fafc;">' +
-							'<div style="min-width: 0; padding-right: 8px;">' +
+						'<div class="d-flex justify-content-between align-items-center p-2 rounded" style="background: #ffffff; border: 1.5px dashed #cbd5e1; gap: 8px; transition: all 0.2s ease;">' +
+							'<div style="min-width: 0; flex: 1;">' +
 								'<div class="d-flex align-items-center" style="gap: 6px;">' +
-									'<span class="badge badge-primary" style="font-size: 10.5px;">' + escapeHtml(v.kode_voucher) + '</span>' +
-									'<strong class="text-dark" style="font-size: 11.5px;">' + escapeHtml(v.label_diskon) + '</strong>' +
+									'<span class="badge badge-primary px-2 py-1" style="font-size: 10px; letter-spacing: 0.5px; border-radius: 6px;">' + escapeHtml(v.kode_voucher) + '</span>' +
+									'<strong class="text-dark" style="font-size: 12px;">' + escapeHtml(v.label_diskon) + '</strong>' +
 								'</div>' +
-								'<div class="text-muted text-truncate" style="font-size: 10.5px; margin-top: 2px;">' + minInfo + expInfo + '</div>' +
+								'<div class="text-muted text-truncate" style="font-size: 11px; margin-top: 3px;">' + minInfo + expInfo + '</div>' +
 							'</div>' +
 							actionBtn +
 						'</div>';
@@ -1586,12 +1588,12 @@
 			$('#checkout_destination_id').val(destId);
 			$('#checkout_destination_postal_code').val(postalCode || '');
 			$('#checkout_destination_label').val(destLabel);
-			$('#ro-selected-dest-badge').text('Tujuan dipilih: ' + destLabel).show();
+			$('#ro-selected-dest-badge').html('<i class="fa fa-check-circle mr-1 text-success"></i><strong>Wilayah Terpilih:</strong> ' + escapeHtml(destLabel)).show();
 			$('#ro-shipping-hint').attr('style', 'display: none !important;');
 
 			var $wrap = $('#ro-courier-options-wrap');
 			var $list = $('#ro-courier-options-list');
-			$list.html('<div class="text-muted small py-2">Menghitung tarif kurir Biteship...</div>');
+			$list.html('<div class="text-muted small py-3 text-center"><i class="fa fa-spinner fa-spin text-primary mr-1"></i> Menghubungi Biteship &amp; menghitung tarif kurir real-time...</div>');
 			$wrap.show();
 
 			$.post('{{ route("frontend.shipping.cost") }}', {
@@ -1601,40 +1603,53 @@
 				total_qty: window.currentCheckoutTotalQty || 1
 			}, function(res) {
 				if (!res || !res.options || res.options.length === 0) {
-					$list.html('<div class="text-danger small py-1">Layanan kurir tidak tersedia untuk tujuan ini. Coba wilayah lain.</div>');
+					$list.html('<div class="text-danger small py-2 px-3 border border-danger rounded" style="background: #fff5f5;"><i class="fa fa-exclamation-triangle mr-1"></i> Layanan kurir tidak tersedia untuk wilayah ini. Silakan coba wilayah alternatif.</div>');
 					return;
 				}
 				var beratKg = ((res.weight_grams || 0) / 1000).toFixed(2).replace(/\.?0+$/, '');
-				var html = '<div class="text-muted mb-1" style="font-size: 10.5px;">Estimasi berat paket: ' + beratKg + ' kg — pilih layanan:</div>';
+				var html = '<div class="d-flex align-items-center justify-content-between mb-2 text-muted" style="font-size: 11px;"><span><i class="fa fa-cube mr-1 text-primary"></i> Estimasi Berat Paket: <strong>' + beratKg + ' kg</strong></span><span>Tersedia <strong>' + res.options.length + ' opsi pengiriman</strong></span></div>';
 				res.options.forEach(function(opt) {
+					var courierLower = (opt.code || '').toLowerCase();
+					var badgeColor = '#6366f1';
+					if (courierLower.includes('jne')) badgeColor = '#005baa';
+					else if (courierLower.includes('jnt') || courierLower.includes('j&t')) badgeColor = '#ed1c24';
+					else if (courierLower.includes('sicepat')) badgeColor = '#d32f2f';
+					else if (courierLower.includes('anteraja')) badgeColor = '#b8006b';
+
 					html +=
-						'<label class="ro-courier-option d-flex justify-content-between align-items-center p-2 border rounded mb-0" style="background: #f8fafc; cursor: pointer;">' +
-							'<div class="d-flex align-items-center" style="gap: 8px;">' +
+						'<label class="ro-courier-option d-flex justify-content-between align-items-center p-2 mb-2 rounded" style="background: #ffffff; border: 1.5px solid #e2e8f0; cursor: pointer; transition: all 0.2s ease;">' +
+							'<div class="d-flex align-items-center" style="gap: 10px;">' +
 								'<input type="radio" name="ro_courier" ' +
 									'data-code="' + escapeHtml(opt.code) + '" ' +
 									'data-service="' + escapeHtml(opt.service) + '" ' +
 									'data-cost="' + parseInt(opt.cost, 10) + '" ' +
 									'data-label="' + escapeHtml(opt.label + ' (' + opt.etd + ')') + '">' +
 								'<div>' +
-									'<strong class="text-dark d-block" style="font-size: 12px;">' + escapeHtml(opt.label) + ' <span class="text-muted font-weight-normal">(' + escapeHtml(opt.description || opt.courier_name) + ')</span></strong>' +
-									'<small class="text-muted" style="font-size: 10.5px;">Estimasi ' + escapeHtml(opt.etd) + '</small>' +
+									'<div class="d-flex align-items-center" style="gap: 6px;">' +
+										'<span class="badge text-white font-weight-bold" style="background-color: ' + badgeColor + '; font-size: 10px; border-radius: 4px; padding: 2px 6px;">' + escapeHtml(opt.code.toUpperCase()) + '</span>' +
+										'<strong class="text-dark" style="font-size: 13px;">' + escapeHtml(opt.service) + '</strong>' +
+										'<span class="badge badge-light border text-muted font-weight-normal" style="font-size: 10.5px;">' + escapeHtml(opt.description || opt.courier_name) + '</span>' +
+									'</div>' +
+									'<div class="text-muted mt-1" style="font-size: 11px;">' +
+										'<i class="fa fa-clock-o text-primary mr-1"></i>Estimasi tiba: <strong class="text-dark">' + escapeHtml(opt.etd) + '</strong>' +
+									'</div>' +
 								'</div>' +
 							'</div>' +
-							'<strong class="text-primary" style="font-size: 12.5px; white-space: nowrap;">' + formatRupiah(opt.cost) + '</strong>' +
+							'<strong class="text-primary font-weight-bold" style="font-size: 13px; white-space: nowrap;">' + formatRupiah(opt.cost) + '</strong>' +
 						'</label>';
 				});
 				$list.html(html);
 				// Pilih otomatis layanan termurah (urutan pertama) agar pembeli langsung melihat total
 				$list.find('input[name="ro_courier"]').first().prop('checked', true).trigger('change');
 			}).fail(function() {
-				$list.html('<div class="text-danger small py-1">Gagal menghitung ongkir. Periksa koneksi lalu pilih ulang tujuan.</div>');
+				$list.html('<div class="text-danger small py-2 px-3 border border-danger rounded" style="background: #fff5f5;"><i class="fa fa-exclamation-circle mr-1"></i> Gagal menghubungi layanan Biteship. Periksa koneksi dan coba lagi.</div>');
 			});
 		}
 
 		$(document).on('change', 'input[name="ro_courier"]', function() {
 			var $r = $(this);
-			$('.ro-courier-option').css({ background: '#f8fafc', borderColor: '#dee2e6' });
-			$r.closest('.ro-courier-option').css({ background: '#eef2ff', borderColor: '#717fe0' });
+			$('.ro-courier-option').css({ background: '#ffffff', borderColor: '#e2e8f0', boxShadow: 'none' });
+			$r.closest('.ro-courier-option').css({ background: '#f5f7ff', borderColor: '#717fe0', boxShadow: '0 4px 12px rgba(113, 127, 224, 0.15)' });
 			$('#checkout_courier_code').val($r.data('code'));
 			$('#checkout_courier_service').val($r.data('service'));
 			$('#checkout_ongkir_preview').val($r.data('cost'));

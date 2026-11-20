@@ -171,195 +171,265 @@
 		</div>
 	</div>
 
-	<!-- Modal Checkout Pesanan -->
+	<!-- Modal Checkout Pesanan Modern -->
 	<div class="modal fade" id="modalCheckout" tabindex="-1" role="dialog" aria-hidden="true">
-		<div class="modal-dialog modal-dialog-centered modal-lg" role="document">
-			<div class="modal-content">
-				<div class="modal-header bg-white px-4 py-3 border-bottom d-flex align-items-center justify-content-between">
-					<div class="d-flex align-items-center" style="gap: 12px;">
-						<span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 40px; height: 40px; background: #eef2ff; color: #717fe0;">
-							<i class="zmdi zmdi-card" style="font-size: 20px;"></i>
+		<div class="modal-dialog modal-dialog-centered modal-xl" role="document" style="max-width: 1060px;">
+			<div class="modal-content checkout-modal-modern">
+				<!-- Modal Header Modern -->
+				<div class="modal-header checkout-modal-header d-flex align-items-center justify-content-between">
+					<div class="d-flex align-items-center" style="gap: 14px;">
+						<span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 44px; height: 44px; background: #eef2ff; color: #6366f1; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.16);">
+							<i class="fa fa-shopping-bag" style="font-size: 19px;"></i>
 						</span>
 						<div>
-							<h5 class="modal-title font-weight-bold text-dark mb-0" style="font-size: 1.08rem;">Checkout & Pembayaran</h5>
-							<small class="text-muted" style="font-size: 12px;">Lengkapi data pengiriman dan pilih metode pembayaran</small>
+							<h5 class="modal-title font-weight-bold text-dark mb-0" style="font-size: 1.15rem; letter-spacing: -0.2px;">Checkout & Pembayaran</h5>
+							<small class="text-muted" style="font-size: 12.5px;">Lengkapi alamat pengiriman dan selesaikan pembayaran aman</small>
 						</div>
 					</div>
-					<button type="button" class="btn btn-sm btn-light rounded-circle d-flex align-items-center justify-content-center" data-dismiss="modal" aria-label="Close" style="width: 34px; height: 34px; border: 1px solid #e2e8f0;">
-						<i class="zmdi zmdi-close text-dark" style="font-size: 18px;"></i>
-					</button>
+					<div class="d-flex align-items-center" style="gap: 10px;">
+						<span class="badge badge-pill badge-light border text-muted px-3 py-2 d-none d-sm-inline-flex align-items-center" style="font-size: 11.5px; background: #f8fafc;">
+							<i class="fa fa-shield text-success mr-2" style="font-size: 13px;"></i> Transaksi Aman &amp; Terenkripsi
+						</span>
+						<button type="button" class="btn btn-sm btn-light rounded-circle d-flex align-items-center justify-content-center" data-dismiss="modal" aria-label="Close" style="width: 36px; height: 36px; border: 1px solid #e2e8f0; transition: all 0.2s ease;">
+							<i class="zmdi zmdi-close text-dark" style="font-size: 18px;"></i>
+						</button>
+					</div>
 				</div>
+
 				<form id="formCheckout" onsubmit="submitCheckoutOrder(event)">
 					@csrf
-					<div class="modal-body">
+					<div class="modal-body p-3 p-md-4" style="background: #f8fafc; max-height: calc(88vh - 130px); overflow-y: auto;">
 						<div class="row">
-							<!-- Kolom Kiri: Form Data Pembeli -->
-							<div class="col-md-7 pr-md-4 mb-3 mb-md-0">
-								<div class="checkout-card-box">
-									<h6 class="font-weight-bold text-dark mb-3 pb-2 border-bottom" style="font-size: 14px;">
-										<i class="fa fa-user-circle text-primary mr-2"></i> Informasi Pembeli & Pengiriman
-									</h6>
+							<!-- Kolom Kiri: Form Data Pembeli, Alamat, Kurir & Pembayaran -->
+							<div class="col-lg-7 pr-lg-3 mb-3 mb-lg-0">
+								<!-- Card 1: Informasi Penerima & Alamat Pengiriman -->
+								<div class="checkout-card-box mb-3">
+									<div class="checkout-section-title">
+										<span class="checkout-step-badge">1</span> Informasi Penerima
+									</div>
 
 									@if(auth()->check() && (empty(auth()->user()->no_hp) || empty(auth()->user()->alamat)))
-									<div class="alert alert-warning py-2 px-3 mb-3" style="font-size: 0.78rem; border-radius: 10px;">
-										<i class="fa fa-info-circle mr-1"></i> Lengkapi <strong>Nomor WhatsApp & Alamat</strong> Anda — data ini akan otomatis tersimpan ke profil akun Anda untuk pesanan selanjutnya.
+									<div class="alert alert-warning py-2 px-3 mb-3 d-flex align-items-center" style="font-size: 0.8rem; border-radius: 12px; gap: 8px;">
+										<i class="fa fa-info-circle text-warning" style="font-size: 16px;"></i>
+										<div>Lengkapi <strong>Nomor WhatsApp &amp; Alamat</strong> — data ini otomatis tersimpan ke profil akun Anda untuk transaksi berikutnya.</div>
 									</div>
 									@endif
 
-									<div class="form-group mb-3">
-										<label class="small font-weight-bold text-dark mb-1">Nama Lengkap <span class="text-danger">*</span></label>
-										<input type="text" name="nama_customer" id="checkout_nama" class="form-control checkout-input-modern" placeholder="Contoh: Budi Santoso" value="{{ auth()->check() ? auth()->user()->nama : '' }}" required>
-									</div>
-
-									<div class="form-group mb-3">
-										<label class="small font-weight-bold text-dark mb-1">Nomor WhatsApp / HP <span class="text-danger">*</span></label>
-										<input type="tel" name="no_hp" id="checkout_no_hp" class="form-control checkout-input-modern" placeholder="Contoh: 081234567890" value="{{ auth()->check() ? auth()->user()->no_hp : '' }}" required inputmode="numeric" pattern="[0-9]{10,15}" maxlength="15" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-										<small class="text-muted" style="font-size: 11px;">Hanya angka (10 - 15 digit) untuk konfirmasi pesanan & resi.</small>
-									</div>
-
-									<div class="form-group mb-3">
-										<div class="d-flex justify-content-between align-items-center mb-1">
-											<label class="small font-weight-bold text-dark mb-0">Kelurahan / Kecamatan / Kota / Kode Pos Tujuan <span class="text-danger">*</span></label>
-											<span class="badge badge-light border text-primary" style="font-size: 10.5px;"><i class="fa fa-bolt text-warning mr-1"></i>Biteship Otomatis</span>
+									<div class="row">
+										<div class="col-md-6 mb-3">
+											<label class="small font-weight-bold text-dark mb-1">
+												<i class="fa fa-user-circle text-muted mr-1"></i> Nama Lengkap <span class="text-danger">*</span>
+											</label>
+											<input type="text" name="nama_customer" id="checkout_nama" class="form-control checkout-input-modern" placeholder="Nama penerima paket" value="{{ auth()->check() ? auth()->user()->nama : '' }}" required>
 										</div>
+										<div class="col-md-6 mb-3">
+											<label class="small font-weight-bold text-dark mb-1">
+												<i class="fa fa-whatsapp text-success mr-1"></i> Nomor WhatsApp / HP <span class="text-danger">*</span>
+											</label>
+											<input type="tel" name="no_hp" id="checkout_no_hp" class="form-control checkout-input-modern" placeholder="Contoh: 081234567890" value="{{ auth()->check() ? auth()->user()->no_hp : '' }}" required inputmode="numeric" pattern="[0-9]{10,15}" maxlength="15" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+										</div>
+									</div>
+
+									<div class="checkout-section-title mt-2">
+										<span class="checkout-step-badge">2</span> Alamat & Wilayah Pengiriman
+										<span class="badge badge-light border text-primary ml-auto font-weight-bold px-2 py-1" style="font-size: 11px;">
+											<i class="fa fa-bolt text-warning mr-1"></i> Biteship Otomatis
+										</span>
+									</div>
+
+									<div class="form-group mb-3">
+										<label class="small font-weight-bold text-dark mb-1 d-block">
+											Kelurahan / Kecamatan / Kota / Kode Pos Tujuan <span class="text-danger">*</span>
+										</label>
 										<div class="position-relative">
-											<input type="text" id="ro-destination-input" class="form-control checkout-input-modern" placeholder="Ketik kelurahan, kecamatan, kota, atau kode pos (min. 3 huruf)..." autocomplete="off">
-											<div id="ro-destination-dropdown" class="list-group position-absolute w-100 shadow-sm" style="z-index: 1050; max-height: 210px; overflow-y: auto; display: none; border-radius: 10px;"></div>
-										</div>
-										<small class="text-muted d-block mt-1" style="font-size: 11px;">Tarif kurir dihitung hingga tingkat kelurahan/desa &amp; kode pos.</small>
-										<div id="ro-selected-dest-badge" class="small text-success font-weight-bold mt-1" style="display: none; font-size: 11.5px;"></div>
-									</div>
-
-									<div class="form-group mb-3">
-										<label class="small font-weight-bold text-dark mb-1">Detail Alamat (Jalan, No. Rumah, RT / RW) <span class="text-danger">*</span></label>
-										<textarea name="alamat" id="checkout_alamat" rows="2" class="form-control checkout-input-modern" placeholder="Contoh: Jl. Melati No. 12, RT 03 / RW 05" required>{{ auth()->check() ? auth()->user()->alamat : '' }}</textarea>
-									</div>
-
-									<div class="form-group mb-3">
-										<label class="small font-weight-bold text-dark mb-2 d-block">Metode Pembayaran <span class="text-danger">*</span></label>
-										<div class="row" style="margin-left: -6px; margin-right: -6px;">
-											<div class="col-6 px-1">
-												<label class="checkout-pay-card">
-													<input type="radio" name="metode_pembayaran" value="midtrans" checked>
-													<span class="checkout-pay-check"><i class="fa fa-check"></i></span>
-													<span class="font-weight-bold text-dark" style="font-size: 13px;">Midtrans (Online)</span>
-													<small class="text-muted text-center" style="font-size: 10.5px;">VA Bank, QRIS, E-Wallet</small>
-												</label>
+											<div class="input-group">
+												<div class="input-group-prepend">
+													<span class="input-group-text bg-white border-right-0" style="border-radius: 10px 0 0 10px; border: 1.5px solid #e2e8f0; color: #94a3b8;">
+														<i class="fa fa-map-marker text-danger"></i>
+													</span>
+												</div>
+												<input type="text" id="ro-destination-input" class="form-control checkout-input-modern border-left-0" style="border-radius: 0 10px 10px 0 !important;" placeholder="Ketik kelurahan, kecamatan, kota, atau kode pos (min. 3 huruf)..." autocomplete="off">
 											</div>
-											<div class="col-6 px-1">
-												<label class="checkout-pay-card">
-													<input type="radio" name="metode_pembayaran" value="cod">
-													<span class="checkout-pay-check"><i class="fa fa-check"></i></span>
-													<span class="font-weight-bold text-dark" style="font-size: 13px;">COD (Bayar di Tempat)</span>
-													<small class="text-muted text-center" style="font-size: 10.5px;">Tunai saat barang sampai</small>
-												</label>
-											</div>
+											<div id="ro-destination-dropdown" class="list-group position-absolute w-100 shadow-lg checkout-custom-scroll" style="z-index: 1060; max-height: 230px; overflow-y: auto; display: none; border-radius: 12px; margin-top: 4px; border: 1px solid #e2e8f0;"></div>
 										</div>
+										<div class="d-flex align-items-start mt-1 text-muted" style="font-size: 11px; line-height: 1.45;">
+											<i class="fa fa-info-circle text-primary mr-1 mt-1 flex-shrink-0"></i>
+											<span>Pencarian otomatis menjangkau hingga tingkat <strong>Kelurahan/Desa &amp; Kode Pos</strong>. RT/RW, nomor rumah, dan patokan dicantumkan lengkap pada detail alamat di bawah.</span>
+										</div>
+										<div id="ro-selected-dest-badge" class="mt-2 p-2 rounded small" style="display: none; background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; font-weight: 600;"></div>
 									</div>
 
 									<div class="form-group mb-3">
-										<label class="small font-weight-bold text-dark mb-2 d-block">Layanan Kurir Pengiriman <span class="text-danger">*</span></label>
-
-										<!-- Daftar Layanan Kurir RajaOngkir Dinamis -->
-										<div id="ro-courier-options-wrap" class="mb-2" style="display: none;">
-											<div id="ro-courier-options-list" class="d-flex flex-column" style="gap: 6px; max-height: 175px; overflow-y: auto;"></div>
-										</div>
-
-										<input type="hidden" id="checkout_destination_id" value="">
-										<input type="hidden" id="checkout_destination_postal_code" value="">
-										<input type="hidden" id="checkout_destination_label" value="">
-										<input type="hidden" id="checkout_courier_code" value="">
-										<input type="hidden" id="checkout_courier_service" value="">
-										<input type="hidden" id="checkout_ongkir_preview" value="0">
-
-										<!-- Petunjuk sebelum tujuan dipilih -->
-										<div id="ro-shipping-hint" class="d-flex align-items-center p-2 rounded" style="background: #f8fafc; border: 1px dashed #cbd5e1; font-size: 11.5px; color: #64748b;">
-											<span>Pilih <strong>kelurahan / kecamatan tujuan</strong> di atas untuk melihat daftar tarif kurir.</span>
-										</div>
+										<label class="small font-weight-bold text-dark mb-1">
+											Detail Alamat (Jalan, No. Rumah, RT / RW, Patokan) <span class="text-danger">*</span>
+										</label>
+										<textarea name="alamat" id="checkout_alamat" rows="2" class="form-control checkout-input-modern" placeholder="Contoh: Jl. Mawar Indah No. 12, RT 03 / RW 05 (Pagar putih depan masjid)" required>{{ auth()->check() ? auth()->user()->alamat : '' }}</textarea>
 									</div>
 
 									<div class="form-group mb-0">
-										<label class="small font-weight-bold text-dark mb-1">Catatan untuk Penjual (Opsional)</label>
-										<input type="text" name="catatan" id="checkout_catatan" class="form-control checkout-input-modern" placeholder="Contoh: Packing bubble wrap ekstra">
+										<label class="small font-weight-bold text-dark mb-1">
+											Catatan untuk Penjual <span class="text-muted font-weight-normal">(Opsional)</span>
+										</label>
+										<input type="text" name="catatan" id="checkout_catatan" class="form-control checkout-input-modern" placeholder="Contoh: Tolong packing bubble wrap tebal / titip di pos satpam">
+									</div>
+								</div>
+
+								<!-- Card 2: Layanan Kurir Pengiriman (Biteship) -->
+								<div class="checkout-card-box mb-3">
+									<div class="checkout-section-title">
+										<span class="checkout-step-badge">3</span> Layanan Kurir Pengiriman <span class="text-danger ml-1">*</span>
+									</div>
+
+									<!-- Daftar Layanan Kurir Dinamis -->
+									<div id="ro-courier-options-wrap" style="display: none;">
+										<div id="ro-courier-options-list" class="d-flex flex-column checkout-custom-scroll" style="gap: 8px; max-height: 200px; overflow-y: auto;"></div>
+									</div>
+
+									<input type="hidden" id="checkout_destination_id" value="">
+									<input type="hidden" id="checkout_destination_postal_code" value="">
+									<input type="hidden" id="checkout_destination_label" value="">
+									<input type="hidden" id="checkout_courier_code" value="">
+									<input type="hidden" id="checkout_courier_service" value="">
+									<input type="hidden" id="checkout_ongkir_preview" value="0">
+
+									<!-- Petunjuk sebelum tujuan dipilih -->
+									<div id="ro-shipping-hint" class="d-flex align-items-center p-3 rounded" style="background: #ffffff; border: 1.5px dashed #cbd5e1; gap: 12px; font-size: 12px; color: #64748b;">
+										<div class="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0" style="width: 36px; height: 36px; background: #f1f5f9; color: #64748b;">
+											<i class="fa fa-truck" style="font-size: 16px;"></i>
+										</div>
+										<div>
+											Pilih <strong>kelurahan / kecamatan tujuan</strong> di atas untuk melihat pilihan kurir dan kalkulasi ongkir otomatis via Biteship.
+										</div>
+									</div>
+								</div>
+
+								<!-- Card 3: Metode Pembayaran -->
+								<div class="checkout-card-box">
+									<div class="checkout-section-title">
+										<span class="checkout-step-badge">4</span> Metode Pembayaran <span class="text-danger ml-1">*</span>
+									</div>
+
+									<div class="row" style="margin-left: -6px; margin-right: -6px;">
+										<div class="col-sm-6 px-1 mb-2 mb-sm-0">
+											<label class="checkout-pay-card">
+												<input type="radio" name="metode_pembayaran" value="midtrans" checked>
+												<span class="checkout-pay-check"><i class="fa fa-check"></i></span>
+												<div class="d-flex align-items-center mb-1" style="gap: 8px;">
+													<span class="badge badge-primary px-2 py-1" style="font-size: 10px; border-radius: 6px;">Otomatis &amp; Cepat</span>
+												</div>
+												<span class="font-weight-bold text-dark" style="font-size: 13.5px;">Midtrans (Online / Instan)</span>
+												<small class="text-muted mt-1" style="font-size: 11px; line-height: 1.4;">QRIS, GoPay, OVO, ShopeePay &amp; Virtual Account (BCA, Mandiri, BNI, BRI)</small>
+											</label>
+										</div>
+										<div class="col-sm-6 px-1">
+											<label class="checkout-pay-card">
+												<input type="radio" name="metode_pembayaran" value="cod">
+												<span class="checkout-pay-check"><i class="fa fa-check"></i></span>
+												<div class="d-flex align-items-center mb-1" style="gap: 8px;">
+													<span class="badge badge-success px-2 py-1" style="font-size: 10px; border-radius: 6px;">Bayar di Tempat</span>
+												</div>
+												<span class="font-weight-bold text-dark" style="font-size: 13.5px;">COD (Cash on Delivery)</span>
+												<small class="text-muted mt-1" style="font-size: 11px; line-height: 1.4;">Bayar tunai langsung ke kurir saat paket sampai di alamat tujuan</small>
+											</label>
+										</div>
 									</div>
 								</div>
 							</div>
 
-							<!-- Kolom Kanan: Ringkasan Belanja -->
-							<div class="col-md-5">
-								<div class="checkout-card-box mb-3">
-									<h6 class="font-weight-bold text-dark mb-2 pb-2 border-bottom" style="font-size: 14px;">
-										<i class="fa fa-shopping-bag text-primary mr-2"></i> Ringkasan Pesanan
-									</h6>
-									<div id="checkout-items-summary" style="max-height: 175px; overflow-y: auto;">
-										<!-- Dynamic items via JS -->
-									</div>
-								</div>
-
-								<!-- Input Voucher Promo -->
-								<div class="checkout-card-box mb-3">
-									<label class="small font-weight-bold text-dark mb-2 d-block">
-										<i class="fa fa-ticket text-primary mr-1"></i> Punya Kode Voucher?
-									</label>
-									<div class="input-group input-group-sm">
-										<input type="text" id="checkout_kode_voucher" class="form-control text-uppercase" placeholder="Kode promo" style="border-radius: 10px 0 0 10px; border: 1.5px solid #e2e8f0; height: 36px;">
-										<div class="input-group-append">
-											<button type="button" id="btn-apply-voucher" onclick="applyVoucher()" class="btn btn-primary font-weight-bold px-3" style="background: linear-gradient(135deg, #717fe0 0%, #5865d6 100%); border: none; border-radius: 0 10px 10px 0;">
-												Pakai
-											</button>
+							<!-- Kolom Kanan: Ringkasan Belanja, Voucher & Rincian Total -->
+							<div class="col-lg-5 pl-lg-3">
+								<div class="checkout-sticky-summary">
+									<!-- Ringkasan Produk Pesanan -->
+									<div class="checkout-card-box mb-3">
+										<div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+											<span class="font-weight-bold text-dark" style="font-size: 14px;">
+												<i class="fa fa-shopping-bag text-primary mr-2"></i> Ringkasan Pesanan
+											</span>
+											<span class="badge badge-pill badge-primary px-2 py-1 font-weight-bold" id="checkout-summary-badge-qty" style="font-size: 11px;">0 Item</span>
+										</div>
+										<div id="checkout-items-summary" class="checkout-custom-scroll" style="max-height: 200px; overflow-y: auto;">
+											<!-- Dynamic items via JS -->
 										</div>
 									</div>
-									<div id="voucher-feedback" class="mt-2 small" style="display: none;"></div>
 
-									<div id="checkout-available-vouchers-wrap" class="mt-2 pt-2 border-top" style="display: none;">
-										<small class="text-muted d-block mb-2 font-weight-bold" style="font-size: 11.5px;">
-											<i class="fa fa-tags text-primary mr-1"></i> Voucher Tersedia:
-										</small>
-										<div id="checkout-available-vouchers-list" class="d-flex flex-column" style="gap: 6px; max-height: 165px; overflow-y: auto;"></div>
-									</div>
-								</div>
+									<!-- Input Voucher Promo -->
+									<div class="checkout-card-box mb-3">
+										<label class="small font-weight-bold text-dark mb-2 d-flex align-items-center justify-content-between">
+											<span><i class="fa fa-ticket text-primary mr-1"></i> Punya Kode Voucher?</span>
+										</label>
+										<div class="input-group input-group-sm">
+											<input type="text" id="checkout_kode_voucher" class="form-control text-uppercase font-weight-bold" placeholder="Masukkan kode promo" style="border-radius: 10px 0 0 10px; border: 1.5px solid #e2e8f0; height: 38px; font-size: 12.5px; letter-spacing: 0.5px;">
+											<div class="input-group-append">
+												<button type="button" id="btn-apply-voucher" onclick="applyVoucher()" class="btn btn-primary font-weight-bold px-3" style="background: linear-gradient(135deg, #717fe0 0%, #5865d6 100%); border: none; border-radius: 0 10px 10px 0; height: 38px;">
+													Pakai
+												</button>
+											</div>
+										</div>
+										<div id="voucher-feedback" class="mt-2 small" style="display: none;"></div>
 
-								<!-- Rincian Total -->
-								<div class="checkout-card-box">
-									<div class="d-flex justify-content-between mb-1 small">
-										<span class="text-muted">Total Produk</span>
-										<strong id="checkout-summary-total-qty" class="text-dark">0 item</strong>
+										<div id="checkout-available-vouchers-wrap" class="mt-2 pt-2 border-top" style="display: none;">
+											<small class="text-muted d-block mb-2 font-weight-bold" style="font-size: 11.5px;">
+												<i class="fa fa-tags text-primary mr-1"></i> Voucher Tersedia:
+											</small>
+											<div id="checkout-available-vouchers-list" class="d-flex flex-column checkout-custom-scroll" style="gap: 6px; max-height: 160px; overflow-y: auto;"></div>
+										</div>
 									</div>
-									<div class="d-flex justify-content-between mb-1 small">
-										<span class="text-muted">Subtotal Belanja</span>
-										<strong id="checkout-summary-subtotal" class="text-dark">Rp 0</strong>
-									</div>
-									<div class="d-flex justify-content-between mb-1 small text-success" id="checkout-summary-discount-row" style="display: none !important;">
-										<span>
-											<i class="fa fa-ticket mr-1"></i> Diskon (<span id="checkout-applied-code"></span>)
-											<a href="javascript:void(0);" onclick="removeVoucher()" class="text-danger ml-1" title="Hapus Voucher">[Hapus]</a>
-										</span>
-										<strong id="checkout-summary-discount">- Rp 0</strong>
-									</div>
-									<div class="d-flex justify-content-between mb-2 small">
-										<span class="text-muted">Ongkos Kirim <span id="checkout-summary-kurir" class="d-block text-primary font-weight-bold" style="font-size: 10.5px;"></span></span>
-										<strong id="checkout-summary-ongkir" class="text-muted">Pilih kurir</strong>
-									</div>
-									<hr class="my-2">
-									<div class="d-flex justify-content-between align-items-center">
-										<span class="font-weight-bold text-dark" style="font-size: 14px;">Total Bayar</span>
-										<strong id="checkout-summary-total-price" style="font-size: 1.25rem; color: #e65540; font-weight: 700;">Rp 0</strong>
-									</div>
-									<div class="mt-2 pt-2 border-top text-muted text-center" style="font-size: 11px;">
-										<i class="fa fa-lock text-success mr-1"></i> Midtrans: bayar maks. 24 jam, status pesanan diperbarui otomatis
+
+									<!-- Rincian Total Bayar -->
+									<div class="checkout-card-box">
+										<div class="d-flex justify-content-between mb-2 small">
+											<span class="text-muted">Total Produk</span>
+											<strong id="checkout-summary-total-qty" class="text-dark">0 item</strong>
+										</div>
+										<div class="d-flex justify-content-between mb-2 small">
+											<span class="text-muted">Subtotal Belanja</span>
+											<strong id="checkout-summary-subtotal" class="text-dark">Rp 0</strong>
+										</div>
+										<div class="d-flex justify-content-between mb-2 small text-success" id="checkout-summary-discount-row" style="display: none !important;">
+											<span>
+												<i class="fa fa-ticket mr-1"></i> Diskon (<span id="checkout-applied-code" class="font-weight-bold"></span>)
+												<a href="javascript:void(0);" onclick="removeVoucher()" class="text-danger ml-1" title="Hapus Voucher" style="text-decoration: underline;">[Hapus]</a>
+											</span>
+											<strong id="checkout-summary-discount">- Rp 0</strong>
+										</div>
+										<div class="d-flex justify-content-between mb-2 small">
+											<span class="text-muted">
+												Ongkos Kirim
+												<span id="checkout-summary-kurir" class="d-block text-primary font-weight-bold" style="font-size: 11px;"></span>
+											</span>
+											<strong id="checkout-summary-ongkir" class="text-muted">Pilih kurir</strong>
+										</div>
+										<hr class="my-2" style="border-top: 1px dashed #e2e8f0;">
+										<div class="d-flex justify-content-between align-items-center pt-1">
+											<div>
+												<span class="font-weight-bold text-dark d-block" style="font-size: 14.5px;">Total Bayar</span>
+												<small class="text-muted" style="font-size: 11px;">Sudah termasuk PPN &amp; Biaya Layanan</small>
+											</div>
+											<strong id="checkout-summary-total-price" style="font-size: 1.35rem; color: #e65540; font-weight: 800; letter-spacing: -0.3px;">Rp 0</strong>
+										</div>
+										<div class="mt-3 pt-2 border-top text-muted text-center" style="font-size: 11px; line-height: 1.45;">
+											<i class="fa fa-lock text-success mr-1"></i> Pembayaran Midtrans terlindungi enkripsi 256-bit &bull; Status terverifikasi instan
+										</div>
 									</div>
 								</div>
 							</div>
 						</div>
 					</div>
 
-					<div class="modal-footer bg-white px-4 py-3 d-flex justify-content-between border-top">
-						<button type="button" class="btn btn-light border px-3 font-weight-bold text-muted" data-dismiss="modal" style="border-radius: 10px; font-size: 13px;">
+					<!-- Modal Footer Modern -->
+					<div class="modal-footer bg-white px-4 py-3 d-flex justify-content-between align-items-center border-top">
+						<button type="button" class="btn btn-light border px-4 font-weight-bold text-muted" data-dismiss="modal" style="border-radius: 12px; font-size: 13.5px; height: 44px;">
 							<i class="fa fa-times mr-1"></i> Batal
 						</button>
-						<button type="submit" id="btn-submit-checkout" class="btn-checkout-submit-modern">
-							<i class="fa fa-check-circle mr-1"></i> Buat Pesanan Sekarang
-						</button>
+						<div class="d-flex align-items-center" style="gap: 16px;">
+							<div class="text-right d-none d-md-block">
+								<div class="small text-muted" style="font-size: 11px;">Total Akhir Pembayaran:</div>
+								<div class="font-weight-bold text-dark" id="checkout-footer-total-preview" style="font-size: 15px; color: #e65540 !important;">Rp 0</div>
+							</div>
+							<button type="submit" id="btn-submit-checkout" class="btn-checkout-submit-modern">
+								<i class="fa fa-lock mr-1"></i> Buat Pesanan Sekarang
+							</button>
+						</div>
 					</div>
 				</form>
 			</div>

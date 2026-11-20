@@ -115,13 +115,15 @@
 		}
 		#modalCheckout .modal-body {
 			padding: 14px !important;
+			max-height: calc(90vh - 120px) !important;
 		}
 		#modalCheckout .modal-footer {
-			flex-direction: column-reverse;
-			gap: 8px;
+			flex-direction: column-reverse !important;
+			gap: 10px !important;
 		}
+		#modalCheckout .modal-footer > div,
 		#modalCheckout .modal-footer button {
-			width: 100%;
+			width: 100% !important;
 		}
 		.checkout-card-box {
 			padding: 14px !important;
