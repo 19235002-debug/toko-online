@@ -7,30 +7,30 @@
     <div class="content-header pb-2">
         <div class="container-fluid">
             <div class="row mb-2 align-items-center">
-                <div class="col-sm-7">
-                    <div class="d-flex align-items-center flex-wrap" style="gap: 10px;">
-                        <span class="d-inline-flex align-items-center justify-content-center rounded-circle"
-                              style="width: 42px; height: 42px; background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%); color: #4f46e5; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);">
+                <div class="col-md-7 col-12 mb-2 mb-md-0">
+                    <div class="d-flex align-items-center flex-wrap" style="gap: 12px;">
+                        <span class="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                              style="width: 44px; height: 44px; background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%); color: #4f46e5; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);">
                             <i class="fa-solid fa-file-invoice" style="font-size: 18px;"></i>
                         </span>
                         <div>
-                            <div class="d-flex align-items-center" style="gap: 8px;">
-                                <h1 class="m-0 font-weight-bold text-dark font-monospace" style="font-size: 22px; font-family: 'Outfit', sans-serif;">
+                            <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
+                                <h1 class="m-0 font-weight-bold text-dark font-monospace" style="font-size: 21px; font-family: 'Outfit', sans-serif;">
                                     Invoice {{ $order->kode_order }}
                                 </h1>
                                 <button type="button" class="btn btn-xs btn-link text-muted p-0 js-copy-btn"
-                                        data-copy="{{ $order->kode_order }}" title="Salin Kode Pesanan">
+                                        data-copy="{{ $order->kode_order }}" title="Salin Kode Pesanan" style="font-size: 13px;">
                                     <i class="fa-regular fa-copy"></i>
                                 </button>
                             </div>
-                            <small class="text-muted">
-                                Dibuat pada {{ $order->created_at->format('d M Y, H:i') }} WIB &middot; Pembeli: <strong>{{ $order->nama_customer }}</strong>
+                            <small class="text-muted d-block mt-0.5">
+                                Dibuat {{ $order->created_at->format('d M Y, H:i') }} WIB &middot; Pembeli: <strong>{{ $order->nama_customer }}</strong>
                             </small>
                         </div>
                     </div>
                 </div>
-                <div class="col-sm-5">
-                    <div class="d-flex align-items-center justify-content-sm-end mt-2 mt-sm-0" style="gap: 8px;">
+                <div class="col-md-5 col-12">
+                    <div class="d-flex align-items-center justify-content-md-end flex-wrap" style="gap: 8px;">
                         <a href="{{ route('order.print', $order->id_order) }}" target="_blank"
                            class="btn btn-sm btn-outline-success font-weight-bold px-3 py-1.5"
                            style="border-radius: 10px;" title="Cetak Faktur Penjualan">
@@ -54,9 +54,10 @@
             @php
                 $statusOrder = ['pending' => 1, 'diproses' => 2, 'dikirim' => 3, 'selesai' => 4, 'dibatalkan' => 0];
                 $currentStep = $statusOrder[$order->status] ?? 1;
+                $stepPercent = [0 => 0, 1 => 0, 2 => 33.333, 3 => 66.666, 4 => 100][$currentStep] ?? 0;
             @endphp
             <div class="card border-0 shadow-sm mb-3" style="border-radius: 16px;">
-                <div class="card-body py-3 px-4">
+                <div class="card-body py-3 px-3 px-md-4">
                     @if($order->status === 'dibatalkan')
                         <div class="d-flex align-items-center justify-content-center p-3 rounded" style="background: #fef2f2; border: 1px solid #fecaca; gap: 10px;">
                             <i class="fa-solid fa-circle-xmark text-danger" style="font-size: 20px;"></i>
@@ -66,71 +67,74 @@
                             </div>
                         </div>
                     @else
-                        <div class="row text-center position-relative align-items-center" style="row-gap: 15px;">
-                            <!-- Step 1: Pesanan Dibuat -->
-                            <div class="col-3 position-relative">
-                                <div class="d-inline-flex align-items-center justify-content-center rounded-circle font-weight-bold mb-1 {{ $currentStep >= 1 ? 'text-white' : 'text-muted bg-light' }}"
-                                     style="width: 36px; height: 36px; {{ $currentStep >= 1 ? 'background: #10b981; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);' : '' }}">
-                                    <i class="fa-solid fa-check"></i>
-                                </div>
-                                <div class="font-weight-bold text-dark" style="font-size: 13px;">Pesanan Dibuat</div>
-                                <small class="text-muted d-block" style="font-size: 11px;">{{ $order->created_at->format('d M, H:i') }}</small>
-                            </div>
+                        <div class="order-stepper-container position-relative py-1">
+                            <!-- Background connecting track line -->
+                            <div class="stepper-track-bg d-none d-sm-block"></div>
+                            <!-- Active filled progress line -->
+                            <div class="stepper-track-active d-none d-sm-block" style="width: calc({{ $stepPercent }}% * 0.75);"></div>
 
-                            <!-- Step 2: Pembayaran / Diproses -->
-                            <div class="col-3 position-relative">
-                                <div class="d-inline-flex align-items-center justify-content-center rounded-circle font-weight-bold mb-1 {{ $currentStep >= 2 ? 'text-white' : ($currentStep == 1 ? 'text-primary bg-primary-subtle border border-primary' : 'text-muted bg-light border') }}"
-                                     style="width: 36px; height: 36px; {{ $currentStep >= 2 ? 'background: #4f46e5; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);' : '' }}">
-                                    @if($currentStep >= 2)
+                            <div class="row text-center position-relative" style="z-index: 3; row-gap: 12px;">
+                                <!-- Step 1: Pesanan Dibuat -->
+                                <div class="col-3 position-relative">
+                                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle font-weight-bold mb-1 stepper-circle {{ $currentStep >= 1 ? 'step-done' : 'step-idle' }}">
                                         <i class="fa-solid fa-check"></i>
-                                    @else
-                                        <i class="fa-solid fa-hourglass-half"></i>
-                                    @endif
+                                    </div>
+                                    <div class="font-weight-bold text-dark stepper-label">Pesanan Dibuat</div>
+                                    <small class="text-muted d-block stepper-sub">{{ $order->created_at->format('d M, H:i') }}</small>
                                 </div>
-                                <div class="font-weight-bold {{ $currentStep >= 2 ? 'text-dark' : 'text-muted' }}" style="font-size: 13px;">
-                                    {{ $order->metode_pembayaran === 'cod' ? 'Konfirmasi COD' : 'Diproses (Lunas)' }}
-                                </div>
-                                <small class="text-muted d-block" style="font-size: 11px;">
-                                    @if($order->paid_at)
-                                        Lunas {{ $order->paid_at->format('d M, H:i') }}
-                                    @elseif($order->metode_pembayaran === 'cod')
-                                        Bayar di Tempat
-                                    @else
-                                        Menunggu Bayar
-                                    @endif
-                                </small>
-                            </div>
 
-                            <!-- Step 3: Pengiriman Kurir -->
-                            <div class="col-3 position-relative">
-                                <div class="d-inline-flex align-items-center justify-content-center rounded-circle font-weight-bold mb-1 {{ $currentStep >= 3 ? 'text-white' : 'text-muted bg-light border' }}"
-                                     style="width: 36px; height: 36px; {{ $currentStep >= 3 ? 'background: #7c3aed; box-shadow: 0 4px 10px rgba(124, 58, 237, 0.3);' : '' }}">
-                                    @if($currentStep >= 3)
-                                        <i class="fa-solid fa-check"></i>
-                                    @else
-                                        <i class="fa-solid fa-truck-fast"></i>
-                                    @endif
+                                <!-- Step 2: Pembayaran / Diproses -->
+                                <div class="col-3 position-relative">
+                                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle font-weight-bold mb-1 stepper-circle {{ $currentStep >= 2 ? 'step-done-blue' : ($currentStep == 1 ? 'step-active' : 'step-idle') }}">
+                                        @if($currentStep >= 2)
+                                            <i class="fa-solid fa-check"></i>
+                                        @else
+                                            <i class="fa-solid fa-hourglass-half"></i>
+                                        @endif
+                                    </div>
+                                    <div class="font-weight-bold {{ $currentStep >= 2 ? 'text-dark' : 'text-muted' }} stepper-label">
+                                        {{ $order->metode_pembayaran === 'cod' ? 'Konfirmasi COD' : 'Diproses (Lunas)' }}
+                                    </div>
+                                    <small class="text-muted d-block stepper-sub">
+                                        @if($order->paid_at)
+                                            Lunas {{ $order->paid_at->format('d M, H:i') }}
+                                        @elseif($order->metode_pembayaran === 'cod')
+                                            Bayar di Tempat
+                                        @else
+                                            Menunggu Bayar
+                                        @endif
+                                    </small>
                                 </div>
-                                <div class="font-weight-bold {{ $currentStep >= 3 ? 'text-dark' : 'text-muted' }}" style="font-size: 13px;">Pengiriman</div>
-                                <small class="text-muted d-block text-truncate" style="font-size: 11px;">
-                                    {{ $order->kurir ?: ($order->ekspedisi ?: 'Kurir Ekspedisi') }}
-                                </small>
-                            </div>
 
-                            <!-- Step 4: Selesai -->
-                            <div class="col-3 position-relative">
-                                <div class="d-inline-flex align-items-center justify-content-center rounded-circle font-weight-bold mb-1 {{ $currentStep >= 4 ? 'text-white' : 'text-muted bg-light border' }}"
-                                     style="width: 36px; height: 36px; {{ $currentStep >= 4 ? 'background: #10b981; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);' : '' }}">
-                                    @if($currentStep >= 4)
-                                        <i class="fa-solid fa-check"></i>
-                                    @else
-                                        <i class="fa-solid fa-circle-check"></i>
-                                    @endif
+                                <!-- Step 3: Pengiriman Kurir -->
+                                <div class="col-3 position-relative">
+                                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle font-weight-bold mb-1 stepper-circle {{ $currentStep >= 3 ? 'step-done-purple' : 'step-idle' }}">
+                                        @if($currentStep >= 3)
+                                            <i class="fa-solid fa-check"></i>
+                                        @else
+                                            <i class="fa-solid fa-truck-fast"></i>
+                                        @endif
+                                    </div>
+                                    <div class="font-weight-bold {{ $currentStep >= 3 ? 'text-dark' : 'text-muted' }} stepper-label">Pengiriman</div>
+                                    <small class="text-muted d-block text-truncate stepper-sub" title="{{ $order->kurir ?: ($order->ekspedisi ?: 'Kurir') }}">
+                                        {{ $order->kurir ?: ($order->ekspedisi ?: 'Kurir') }}
+                                    </small>
                                 </div>
-                                <div class="font-weight-bold {{ $currentStep >= 4 ? 'text-dark' : 'text-muted' }}" style="font-size: 13px;">Selesai</div>
-                                <small class="text-muted d-block" style="font-size: 11px;">
-                                    {{ $order->completed_at ? $order->completed_at->format('d M, H:i') : 'Paket Diterima' }}
-                                </small>
+
+                                <!-- Step 4: Selesai -->
+                                <div class="col-3 position-relative">
+                                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle font-weight-bold mb-1 stepper-circle {{ $currentStep >= 4 ? 'step-done' : 'step-idle' }}">
+                                        @if($currentStep >= 4)
+                                            <i class="fa-solid fa-check"></i>
+                                        @else
+                                            <i class="fa-solid fa-circle-check"></i>
+                                        @endif
+                                    </div>
+                                    <div class="font-weight-bold {{ $currentStep >= 4 ? 'text-dark' : 'text-muted' }} stepper-label">Selesai</div>
+                                    <small class="text-muted d-block stepper-sub">
+                                        {{ $order->completed_at ? $order->completed_at->format('d M, H:i') : 'Paket Diterima' }}
+                                    </small>
+                                </div>
                             </div>
                         </div>
                     @endif
@@ -139,10 +143,10 @@
 
             <div class="row">
                 <!-- KIRI: Manajemen Status, Logistik & Info Pelanggan -->
-                <div class="col-lg-4">
+                <div class="col-lg-5 col-xl-4 mb-3">
                     <!-- Status & Logistik Card -->
                     <div class="card shadow-sm border-0 mb-3" style="border-radius: 16px; overflow: hidden;">
-                        <div class="card-header bg-white border-bottom py-3 px-4 d-flex align-items-center justify-content-between">
+                        <div class="card-header bg-white border-bottom py-3 px-3 px-md-4 d-flex align-items-center justify-content-between">
                             <div class="d-flex align-items-center" style="gap: 8px;">
                                 <span class="d-inline-flex align-items-center justify-content-center rounded-circle"
                                       style="width: 32px; height: 32px; background: #eef2ff; color: #4f46e5;">
@@ -174,32 +178,38 @@
                             @endif
                         </div>
 
-                        <div class="card-body p-4">
+                        <div class="card-body p-3 p-md-3.5">
                             <!-- Smart Logistics / Action Box -->
                             @if($order->status === 'dikirim' && $order->no_resi)
                                 <!-- Sesi Dikirim: Resi Aktif & Cetak Label -->
                                 <div class="mb-3 p-3 rounded" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;">
                                     <div class="d-flex align-items-center justify-content-between mb-1">
-                                        <span class="text-muted small">Nomor Resi Resmi:</span>
+                                        <span class="text-muted small" style="font-size: 12px;">Nomor Resi Resmi:</span>
                                         <span class="badge badge-light border text-dark font-weight-bold">{{ $order->ekspedisi ?: 'Kurir' }}</span>
                                     </div>
                                     <div class="d-flex align-items-center justify-content-between mb-2">
-                                        <strong class="font-monospace text-primary font-weight-bold" style="font-size: 15px;">{{ $order->no_resi }}</strong>
-                                        <button type="button" class="btn btn-xs btn-link text-muted p-0 js-copy-btn" data-copy="{{ $order->no_resi }}" title="Salin Nomor Resi">
-                                            <i class="fa-regular fa-copy"></i> Salin
+                                        <strong class="font-monospace text-primary font-weight-bold text-truncate mr-2" style="font-size: 14.5px;">{{ $order->no_resi }}</strong>
+                                        <button type="button" class="btn btn-xs btn-link text-muted p-0 js-copy-btn flex-shrink-0" data-copy="{{ $order->no_resi }}" title="Salin Nomor Resi">
+                                            <i class="fa-regular fa-copy mr-1"></i>Salin
                                         </button>
                                     </div>
 
-                                    <div class="d-flex flex-column" style="gap: 6px;">
+                                    <div class="d-flex flex-column" style="gap: 7px;">
+                                        <!-- Cetak Label Resi Thermal -->
                                         <a href="{{ route('order.shippingLabel', $order->id_order) }}" target="_blank"
-                                           class="btn btn-dark btn-sm btn-block font-weight-bold py-2" style="border-radius: 10px;">
-                                            <i class="fa-solid fa-barcode mr-1"></i> Cetak Label Resi Thermal (100x150)
+                                           class="btn btn-dark btn-sm logistics-action-btn font-weight-bold shadow-sm"
+                                           title="Cetak Label Pengiriman Barcode Ukuran 100x150 mm">
+                                            <i class="fa-solid fa-barcode"></i>
+                                            <span>Cetak Label Thermal (100x150)</span>
                                         </a>
 
                                         @if($order->biteship_tracking_url)
+                                            <!-- Lacak Pengiriman Real-Time -->
                                             <a href="{{ $order->biteship_tracking_url }}" target="_blank"
-                                               class="btn btn-outline-info btn-sm btn-block font-weight-bold py-1.5" style="border-radius: 10px;">
-                                                <i class="fa-solid fa-location-arrow mr-1"></i> Lacak Pengiriman Real-Time
+                                               class="btn btn-outline-info btn-sm logistics-action-btn font-weight-bold"
+                                               title="Pantau posisi kurir secara real-time">
+                                                <i class="fa-solid fa-location-arrow"></i>
+                                                <span>Lacak Pengiriman Real-Time</span>
                                             </a>
                                         @endif
 
@@ -211,20 +221,24 @@
                                             $waText = "Halo kak *" . $order->nama_customer . "*,\n\nPesanan Anda *" . $order->kode_order . "* telah kami kirimkan!\n\nKurir: *" . ($order->kurir ?? $order->ekspedisi ?? 'Ekspedisi') . "*\nNomor Resi: *" . $order->no_resi . "*\n\nLacak pesanan Anda di: " . url('/lacak-pesanan?order=' . $order->kode_order) . "\n\nTerima kasih telah berbelanja di toko kami!";
                                             $waResiUrl = "https://wa.me/" . $cleanHp . "?text=" . urlencode($waText);
                                         @endphp
+                                        <!-- Kirim Resi ke WhatsApp Pembeli -->
                                         <a href="{{ $waResiUrl }}" target="_blank"
-                                           class="btn btn-outline-success btn-sm btn-block font-weight-bold py-1.5" style="border-radius: 10px;">
-                                            <i class="fa-brands fa-whatsapp mr-1"></i> Kirim Resi ke WhatsApp Pembeli
+                                           class="btn btn-outline-success btn-sm logistics-action-btn font-weight-bold"
+                                           title="Kirim pesan rincian resi ke WhatsApp pembeli">
+                                            <i class="fa-brands fa-whatsapp"></i>
+                                            <span>Kirim Resi ke WhatsApp</span>
                                         </a>
 
                                         <!-- Tombol Cepat: Simulasi Paket Tiba & Selesai -->
-                                        <form action="{{ route('order.updateStatus', $order->id_order) }}" method="POST" class="mt-1.5">
+                                        <form action="{{ route('order.updateStatus', $order->id_order) }}" method="POST" class="mt-1">
                                             @csrf
                                             @method('PUT')
                                             <input type="hidden" name="status" value="selesai">
-                                            <button type="submit" class="btn btn-success btn-sm btn-block font-weight-bold py-2 shadow-sm"
-                                                    style="border-radius: 10px; background: #059669; border-color: #059669;"
+                                            <button type="submit" class="btn btn-success btn-sm logistics-action-btn font-weight-bold shadow-sm"
+                                                    style="background: #059669; border-color: #059669;"
                                                     onclick="return confirm('Simulasikan paket telah sampai dan selesaikan pesanan ini?')">
-                                                <i class="fa-solid fa-circle-check mr-1.5"></i> Tandai Paket Sampai (Selesai)
+                                                <i class="fa-solid fa-circle-check"></i>
+                                                <span>Tandai Paket Sampai (Selesai)</span>
                                             </button>
                                         </form>
                                     </div>
@@ -241,9 +255,10 @@
                                     </p>
                                     <form action="{{ route('order.requestPickup', $order->id_order) }}" method="POST">
                                         @csrf
-                                        <button type="submit" class="btn btn-warning btn-block font-weight-bold text-dark py-2 shadow-sm"
-                                                style="background: #f59e0b; border-color: #f59e0b; border-radius: 10px; font-size: 13.5px;">
-                                            <i class="fa-solid fa-truck-pickup mr-1.5"></i> Request Pick-up Kurir
+                                        <button type="submit" class="btn btn-warning btn-block font-weight-bold text-dark py-2 shadow-sm logistics-action-btn"
+                                                style="background: #f59e0b; border-color: #f59e0b; font-size: 13.5px;">
+                                            <i class="fa-solid fa-truck-pickup mr-1"></i>
+                                            <span>Request Pick-up Kurir</span>
                                         </button>
                                     </form>
                                 </div>
@@ -258,8 +273,9 @@
                                         Pembeli belum menyelesaikan pembayaran online. Jika pembeli sudah transfer di simulator/sandbox, klik sinkronkan di bawah.
                                     </p>
                                     <a href="{{ route('order.checkMidtrans', $order->id_order) }}"
-                                       class="btn btn-outline-info btn-block btn-sm font-weight-bold py-1.5" style="border-radius: 8px;">
-                                        <i class="fa-solid fa-rotate mr-1"></i> Cek Status Pembayaran (Sync)
+                                       class="btn btn-outline-info btn-block btn-sm font-weight-bold py-1.5 logistics-action-btn">
+                                        <i class="fa-solid fa-rotate mr-1"></i>
+                                        <span>Cek Status Pembayaran (Sync)</span>
                                     </a>
                                 </div>
                             @endif
@@ -318,9 +334,10 @@
                                 </div>
 
                                 @if(!empty($allowedNext))
-                                <button type="submit" class="btn btn-primary btn-block font-weight-bold py-2 shadow-sm"
-                                        style="border-radius: 10px; background: #4f46e5; border-color: #4f46e5; font-size: 13.5px;">
-                                    <i class="fa-solid fa-floppy-disk mr-1"></i> Simpan Status Baru
+                                <button type="submit" class="btn btn-primary btn-block font-weight-bold py-2 shadow-sm logistics-action-btn"
+                                        style="background: #4f46e5; border-color: #4f46e5; font-size: 13.5px;">
+                                    <i class="fa-solid fa-floppy-disk mr-1"></i>
+                                    <span>Simpan Status Baru</span>
                                 </button>
                                 @else
                                 <div class="p-2 rounded bg-light border text-center small text-muted">
@@ -349,7 +366,7 @@
 
                     <!-- Informasi Pembeli & Alamat Card -->
                     <div class="card shadow-sm border-0 mb-3" style="border-radius: 16px; overflow: hidden;">
-                        <div class="card-header bg-white border-bottom py-3 px-4 d-flex align-items-center" style="gap: 8px;">
+                        <div class="card-header bg-white border-bottom py-3 px-3 px-md-4 d-flex align-items-center" style="gap: 8px;">
                             <span class="d-inline-flex align-items-center justify-content-center rounded-circle"
                                   style="width: 32px; height: 32px; background: #ecfdf5; color: #059669;">
                                 <i class="fa-solid fa-user-check" style="font-size: 14px;"></i>
@@ -357,7 +374,7 @@
                             <h6 class="font-weight-bold text-dark mb-0" style="font-size: 15px;">Informasi Pembeli</h6>
                         </div>
 
-                        <div class="card-body p-4">
+                        <div class="card-body p-3 p-md-3.5">
                             <!-- Customer Profile Header -->
                             <div class="d-flex align-items-center mb-3" style="gap: 10px;">
                                 <span class="d-inline-flex align-items-center justify-content-center rounded-circle font-weight-bold text-white flex-shrink-0"
@@ -371,30 +388,30 @@
                             </div>
 
                             <!-- Key-Value Info List -->
-                            <div class="d-flex flex-column" style="gap: 10px; font-size: 13px;">
+                            <div class="d-flex flex-column" style="gap: 9px; font-size: 13px;">
                                 <!-- WhatsApp -->
-                                <div class="d-flex align-items-center justify-content-between py-1.5 border-bottom">
+                                <div class="d-flex align-items-center justify-content-between py-1.5 border-bottom flex-wrap" style="gap: 6px;">
                                     <span class="text-muted"><i class="fa-brands fa-whatsapp text-success mr-1"></i> WhatsApp</span>
                                     <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $order->no_hp) }}" target="_blank"
                                        class="badge rounded-pill px-2.5 py-1 font-weight-bold d-inline-flex align-items-center"
                                        style="background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; gap: 4px;">
-                                        {{ $order->no_hp }} <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 10px;"></i>
+                                        {{ $order->no_hp }} <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 9.5px;"></i>
                                     </a>
                                 </div>
 
                                 <!-- Alamat Pengiriman -->
                                 <div class="py-1.5 border-bottom">
                                     <span class="text-muted d-block mb-1"><i class="fa-solid fa-location-dot text-danger mr-1"></i> Alamat Pengiriman:</span>
-                                    <div class="font-weight-500 text-dark">{{ $order->alamat }}</div>
+                                    <div class="font-weight-500 text-dark word-break">{{ $order->alamat }}</div>
                                     @if($order->destination_label)
-                                        <div class="small text-primary font-weight-500 mt-1 p-2 rounded" style="background: #f8faff; border: 1px dashed #c7d2fe;">
+                                        <div class="small text-primary font-weight-500 mt-1 p-2 rounded word-break" style="background: #f8faff; border: 1px dashed #c7d2fe;">
                                             <i class="fa-solid fa-map-pin mr-1"></i> {{ $order->destination_label }}
                                         </div>
                                     @endif
                                 </div>
 
                                 <!-- Kurir Pengiriman -->
-                                <div class="d-flex align-items-center justify-content-between py-1.5 border-bottom">
+                                <div class="d-flex align-items-center justify-content-between py-1.5 border-bottom flex-wrap" style="gap: 6px;">
                                     <span class="text-muted"><i class="fa-solid fa-truck-fast text-primary mr-1"></i> Kurir Pengiriman</span>
                                     <span class="badge badge-light border text-dark font-weight-bold px-2 py-1">
                                         {{ $order->kurir ?? $order->ekspedisi ?? '-' }}
@@ -405,7 +422,7 @@
                                 </div>
 
                                 <!-- Metode Pembayaran -->
-                                <div class="d-flex align-items-center justify-content-between py-1.5 border-bottom">
+                                <div class="d-flex align-items-center justify-content-between py-1.5 border-bottom flex-wrap" style="gap: 6px;">
                                     <span class="text-muted"><i class="fa-solid fa-credit-card text-info mr-1"></i> Pembayaran</span>
                                     <div class="text-right">
                                         @if($order->metode_pembayaran === 'midtrans' || $order->metode_pembayaran === 'online')
@@ -429,7 +446,7 @@
                                 @if($order->catatan)
                                 <div class="py-1.5">
                                     <span class="text-muted d-block mb-1"><i class="fa-solid fa-comment-dots text-secondary mr-1"></i> Catatan Pembeli:</span>
-                                    <div class="p-2 rounded bg-light border small text-dark fst-italic">"{{ $order->catatan }}"</div>
+                                    <div class="p-2 rounded bg-light border small text-dark fst-italic word-break">"{{ $order->catatan }}"</div>
                                 </div>
                                 @endif
                             </div>
@@ -438,9 +455,9 @@
                 </div>
 
                 <!-- KANAN: Daftar Produk Dipesan & Rekap Finansial -->
-                <div class="col-lg-8">
+                <div class="col-lg-7 col-xl-8 mb-3">
                     <div class="card shadow-sm border-0 mb-3" style="border-radius: 16px; overflow: hidden;">
-                        <div class="card-header bg-white border-bottom py-3 px-4 d-flex align-items-center justify-content-between">
+                        <div class="card-header bg-white border-bottom py-3 px-3 px-md-4 d-flex align-items-center justify-content-between flex-wrap" style="gap: 8px;">
                             <div class="d-flex align-items-center" style="gap: 8px;">
                                 <span class="d-inline-flex align-items-center justify-content-center rounded-circle"
                                       style="width: 32px; height: 32px; background: #e0f2fe; color: #0284c7;">
@@ -457,7 +474,7 @@
 
                         <div class="card-body p-0">
                             <div class="table-responsive">
-                                <table class="table table-hover align-middle mb-0" style="width: 100%;">
+                                <table class="table table-hover align-middle mb-0" style="width: 100%; min-width: 580px;">
                                     <thead style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; font-size: 11px; letter-spacing: 0.04em;">
                                         <tr>
                                             <th style="width: 45px;" class="text-center text-muted font-weight-bold">#</th>
@@ -517,9 +534,9 @@
                             </div>
 
                             <!-- Financial Breakdown Footer Summary -->
-                            <div class="p-4 border-top" style="background: #fafbfc;">
+                            <div class="p-3 p-md-4 border-top" style="background: #fafbfc;">
                                 <div class="row justify-content-end">
-                                    <div class="col-md-7 col-lg-6">
+                                    <div class="col-md-8 col-lg-7">
                                         <div class="d-flex flex-column" style="gap: 8px; font-size: 13px;">
                                             <!-- Subtotal Barang -->
                                             <div class="d-flex justify-content-between text-muted">
@@ -554,10 +571,10 @@
                                             <hr class="my-1 border-top">
 
                                             <!-- Total Pembayaran -->
-                                            <div class="d-flex justify-content-between align-items-center pt-1">
+                                            <div class="d-flex justify-content-between align-items-center pt-1 flex-wrap" style="gap: 6px;">
                                                 <div>
-                                                    <strong class="text-dark text-uppercase font-weight-bold" style="font-size: 13.5px; letter-spacing: 0.5px;">TOTAL PEMBAYARAN:</strong>
-                                                    <small class="text-muted d-block" style="font-size: 11px;">Sudah termasuk ongkos kirim &amp; potongan promo</small>
+                                                    <strong class="text-dark text-uppercase font-weight-bold" style="font-size: 13px; letter-spacing: 0.5px;">TOTAL PEMBAYARAN:</strong>
+                                                    <small class="text-muted d-block" style="font-size: 11px;">Termasuk ongkos kirim &amp; diskon promo</small>
                                                 </div>
                                                 <span class="font-weight-bold text-success" style="font-size: 20px; font-family: 'Outfit', sans-serif;">
                                                     Rp {{ number_format($order->total_harga, 0, ',', '.') }}
@@ -574,6 +591,101 @@
         </div>
     </div>
 </div>
+
+<style>
+/* Stepper Styles & Connected Line */
+.order-stepper-container {
+    position: relative;
+}
+.stepper-track-bg {
+    position: absolute;
+    top: 20px;
+    left: 12.5%;
+    right: 12.5%;
+    height: 3px;
+    background: #e2e8f0;
+    border-radius: 99px;
+    z-index: 1;
+}
+.stepper-track-active {
+    position: absolute;
+    top: 20px;
+    left: 12.5%;
+    height: 3px;
+    background: linear-gradient(90deg, #10b981 0%, #4f46e5 50%, #7c3aed 100%);
+    border-radius: 99px;
+    z-index: 2;
+    transition: width 0.4s ease;
+}
+.stepper-circle {
+    width: 38px;
+    height: 38px;
+    border: 3px solid #ffffff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+.step-done {
+    background: #10b981;
+    color: #ffffff;
+}
+.step-done-blue {
+    background: #4f46e5;
+    color: #ffffff;
+}
+.step-done-purple {
+    background: #7c3aed;
+    color: #ffffff;
+}
+.step-active {
+    background: #eef2ff;
+    color: #4f46e5;
+    border-color: #c7d2fe !important;
+}
+.step-idle {
+    background: #f1f5f9;
+    color: #94a3b8;
+}
+.stepper-label {
+    font-size: 12.5px;
+}
+.stepper-sub {
+    font-size: 11px;
+}
+
+/* Action Buttons Responsive (No Overflow) */
+.logistics-action-btn {
+    white-space: normal !important;
+    word-break: break-word;
+    line-height: 1.35;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 8.5px 12px !important;
+    font-size: 12.5px !important;
+    border-radius: 10px;
+    gap: 6px;
+    width: 100%;
+}
+.word-break {
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+/* Mobile Tweaks */
+@media (max-width: 575.98px) {
+    .stepper-circle {
+        width: 30px;
+        height: 30px;
+        font-size: 11px;
+    }
+    .stepper-label {
+        font-size: 11px;
+    }
+    .stepper-sub {
+        font-size: 9.5px;
+    }
+}
+</style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
