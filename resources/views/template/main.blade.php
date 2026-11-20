@@ -176,9 +176,15 @@
                     </div>
                     <ul class="flex flex-col gap-1 list-unstyled mb-3">
                         <li>
-                            <a href="/setting" title="Pengaturan Toko" class="ta-nav-link {{ request()->is('setting*') ? 'is-active' : '' }}">
+                            <a href="/setting" title="Pengaturan Toko" class="ta-nav-link {{ request()->is('setting') ? 'is-active' : '' }}">
                                 <span class="ta-nav-icon"><i class="fa-solid fa-sliders"></i></span>
                                 <span :class="sidebarToggle ? 'xl:hidden' : ''">Pengaturan Toko</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/setting/metode" title="Opsi Kurir &amp; Pembayaran" class="ta-nav-link {{ request()->is('setting/metode*') ? 'is-active' : '' }}">
+                                <span class="ta-nav-icon"><i class="fa-solid fa-toggle-on text-indigo-500"></i></span>
+                                <span :class="sidebarToggle ? 'xl:hidden' : ''">Kurir &amp; Pembayaran</span>
                             </a>
                         </li>
                         <li>

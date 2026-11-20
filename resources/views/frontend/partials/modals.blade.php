@@ -303,10 +303,19 @@
 										<span class="checkout-step-badge">4</span> Metode Pembayaran <span class="text-danger ml-1">*</span>
 									</div>
 
+									@php
+										$storeSetting = store_setting();
+										$isOnlineActive = $storeSetting->isPaymentActive('midtrans');
+										$isCodActive = $storeSetting->isPaymentActive('cod');
+										$bothActive = $isOnlineActive && $isCodActive;
+										$colClass = $bothActive ? 'col-sm-6' : 'col-12';
+									@endphp
+
 									<div class="row" style="margin-left: -6px; margin-right: -6px;">
-										<div class="col-sm-6 px-1 mb-2 mb-sm-0">
+										@if($isOnlineActive)
+										<div class="{{ $colClass }} px-1 mb-2 mb-sm-0">
 											<label class="checkout-pay-card">
-												<input type="radio" name="metode_pembayaran" value="midtrans" checked>
+												<input type="radio" name="metode_pembayaran" value="midtrans" {{ $isOnlineActive ? 'checked' : '' }}>
 												<span class="checkout-pay-check"><i class="zmdi zmdi-check"></i></span>
 												<div class="d-flex align-items-center mb-1" style="gap: 8px;">
 													<span class="badge badge-primary px-2 py-1" style="font-size: 10px; border-radius: 6px;">Otomatis &amp; Cepat</span>
@@ -315,9 +324,12 @@
 												<small class="text-muted mt-1" style="font-size: 11px; line-height: 1.4;">QRIS, GoPay, OVO, ShopeePay &amp; Virtual Account (BCA, Mandiri, BNI, BRI)</small>
 											</label>
 										</div>
-										<div class="col-sm-6 px-1">
+										@endif
+
+										@if($isCodActive)
+										<div class="{{ $colClass }} px-1">
 											<label class="checkout-pay-card">
-												<input type="radio" name="metode_pembayaran" value="cod">
+												<input type="radio" name="metode_pembayaran" value="cod" {{ (!$isOnlineActive && $isCodActive) ? 'checked' : '' }}>
 												<span class="checkout-pay-check"><i class="zmdi zmdi-check"></i></span>
 												<div class="d-flex align-items-center mb-1" style="gap: 8px;">
 													<span class="badge badge-success px-2 py-1" style="font-size: 10px; border-radius: 6px;">Bayar di Tempat</span>
@@ -326,6 +338,15 @@
 												<small class="text-muted mt-1" style="font-size: 11px; line-height: 1.4;">Bayar tunai langsung ke kurir saat paket sampai di alamat tujuan</small>
 											</label>
 										</div>
+										@endif
+
+										@if(!$isOnlineActive && !$isCodActive)
+										<div class="col-12 px-1">
+											<div class="alert alert-warning mb-0" style="font-size: 12px; border-radius: 10px;">
+												<i class="fa fa-exclamation-triangle mr-1"></i> Tidak ada metode pembayaran aktif saat ini. Silakan hubungi admin toko.
+											</div>
+										</div>
+										@endif
 									</div>
 								</div>
 							</div>

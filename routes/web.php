@@ -123,9 +123,13 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/laporan/print', [LaporanController::class, 'print'])->name('laporan.print');
     Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
 
-    // Pengaturan Toko
+    // Pengaturan Toko & Opsi Pengiriman / Pembayaran
     Route::get('/setting', [SettingController::class, 'index'])->name('setting.index');
     Route::put('/setting', [SettingController::class, 'update'])->name('setting.update');
+    Route::get('/setting/metode', [SettingController::class, 'methodsIndex'])->name('setting.methods');
+    Route::put('/setting/metode', [SettingController::class, 'updateMethods'])->name('setting.methods.update');
+    Route::post('/setting/toggle-courier', [SettingController::class, 'toggleCourier'])->name('setting.toggleCourier');
+    Route::post('/setting/toggle-payment', [SettingController::class, 'togglePayment'])->name('setting.togglePayment');
 
     // Moderasi Ulasan & Rating
     Route::get('/review', [ReviewController::class, 'index'])->name('review.index');

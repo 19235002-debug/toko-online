@@ -27,6 +27,16 @@
                 @csrf
                 @method('PUT')
 
+                <!-- Navigation Tabs -->
+                <div class="d-flex align-items-center mb-3" style="gap: 8px;">
+                    <a href="{{ route('setting.index') }}" class="btn btn-primary btn-sm px-3 rounded-pill font-weight-bold shadow-sm">
+                        <i class="fa-solid fa-store mr-1.5"></i> Profil &amp; Info Toko
+                    </a>
+                    <a href="{{ route('setting.methods') }}" class="btn btn-outline-primary btn-sm px-3 rounded-pill font-weight-bold">
+                        <i class="fa-solid fa-toggle-on mr-1.5"></i> Opsi Kurir &amp; Pembayaran
+                    </a>
+                </div>
+
                 <!-- Top Overview Banner -->
                 <div class="card mb-4">
                     <div class="card-body py-3 d-flex flex-wrap align-items-center justify-content-between" style="gap: 14px;">
@@ -208,6 +218,41 @@
 
                                 <div class="alert alert-light border mb-0" style="font-size: 12px;">
                                     <i class="fa fa-info-circle text-primary mr-1"></i> Ongkos kirim, nomor resi pengiriman, dan penjemputan kurir otomatis terhubung dengan sistem ekspedisi terpadu.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card Quick Access Kurir & Pembayaran -->
+                        <div class="card shadow-sm border-primary" style="background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);">
+                            <div class="card-body p-3">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <div class="d-flex align-items-center" style="gap: 8px;">
+                                        <span class="d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px; border-radius: 8px; background: #eef2ff; color: #465fff;">
+                                            <i class="fa-solid fa-sliders text-primary" style="font-size: 13px;"></i>
+                                        </span>
+                                        <div>
+                                            <h6 class="font-weight-bold mb-0 text-dark" style="font-size: 13.5px;">Opsi Kurir &amp; Pembayaran</h6>
+                                            <small class="text-muted" style="font-size: 11px;">Aktifkan atau nonaktifkan kurir &amp; pembayaran</small>
+                                        </div>
+                                    </div>
+                                    <a href="{{ route('setting.methods') }}" class="btn btn-primary btn-xs px-2.5 py-1 rounded font-weight-bold" style="font-size: 11px;">
+                                        Kelola <i class="fa-solid fa-arrow-right ml-1"></i>
+                                    </a>
+                                </div>
+
+                                <div class="row text-center mt-2 pt-2 border-top">
+                                    <div class="col-6 border-right">
+                                        <div class="text-muted" style="font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Kurir Aktif</div>
+                                        <div class="font-weight-bold text-primary mt-0.5" style="font-size: 14px;">
+                                            {{ count($setting->getActiveCouriers()) }} / {{ count(\App\Models\Setting::ALL_COURIERS) }}
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="text-muted" style="font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Metode Bayar</div>
+                                        <div class="font-weight-bold text-success mt-0.5" style="font-size: 14px;">
+                                            {{ count($setting->getActivePaymentMethods()) }} / {{ count(\App\Models\Setting::ALL_PAYMENTS) }}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

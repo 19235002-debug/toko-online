@@ -11,6 +11,7 @@ use App\Models\Review;
 use App\Models\BarangVariasi;
 use App\Models\BarangGambar;
 use App\Models\Voucher;
+use App\Models\Setting;
 use App\Services\ImageCompressor;
 use App\Services\BiteshipService;
 use App\Services\RajaOngkirService;
@@ -595,6 +596,13 @@ class FrontendController extends Controller
             $options = RajaOngkirService::calculateCost($validated['destination_id'], $weightGrams);
         }
 
+        // Filter hanya kurir yang aktif di pengaturan admin toko
+        $activeCouriers = Setting::getSettings()->getActiveCouriers();
+        $options = array_values(array_filter($options, function ($opt) use ($activeCouriers) {
+            $code = strtolower($opt['code'] ?? '');
+            return in_array($code, $activeCouriers, true);
+        }));
+
         return response()->json([
             'success' => true,
             'weight_grams' => $weightGrams,
@@ -890,11 +898,14 @@ class FrontendController extends Controller
      */
     public function checkout(Request $request)
     {
+        $activePayments = Setting::getSettings()->getActivePaymentMethods();
+        $activeCouriers = Setting::getSettings()->getActiveCouriers();
+
         $validated = $request->validate([
             'nama_customer' => 'required|string|max:100',
             'no_hp' => ['required', 'regex:/^[0-9]{10,15}$/'],
             'alamat' => 'required|string',
-            'metode_pembayaran' => 'required|in:midtrans,cod',
+            'metode_pembayaran' => ['required', 'in:' . implode(',', $activePayments)],
             'destination_id' => 'required',
             'destination_label' => 'required|string|max:255',
             'destination_postal_code' => 'nullable|string|max:10',
@@ -908,11 +919,19 @@ class FrontendController extends Controller
             'no_hp.required' => 'Nomor WhatsApp / HP wajib diisi.',
             'no_hp.regex' => 'Nomor WhatsApp / HP hanya boleh berupa angka (10 - 15 digit, contoh: 081234567890).',
             'alamat.required' => 'Alamat pengiriman wajib diisi.',
+            'metode_pembayaran.in' => 'Metode pembayaran yang dipilih sedang tidak aktif atau dinonaktifkan oleh toko.',
             'destination_id.required' => 'Pilih kecamatan / kelurahan tujuan pengiriman terlebih dahulu.',
             'destination_label.required' => 'Pilih kecamatan / kelurahan tujuan pengiriman terlebih dahulu.',
             'courier_code.required' => 'Pilih layanan kurir pengiriman terlebih dahulu.',
             'courier_service.required' => 'Pilih layanan kurir pengiriman terlebih dahulu.',
         ]);
+
+        if (!in_array(strtolower($validated['courier_code']), $activeCouriers, true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Layanan kurir ' . strtoupper($validated['courier_code']) . ' sedang dinonaktifkan oleh toko. Silakan pilih kurir lain.',
+            ], 422);
+        }
 
         $cart = is_string($request->cart_items) ? json_decode($request->cart_items, true) : $request->cart_items;
 
