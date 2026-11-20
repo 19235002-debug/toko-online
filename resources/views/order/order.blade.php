@@ -318,8 +318,14 @@
                                         <div class="font-weight-bold text-dark" style="font-size: 14.5px;">
                                             Rp {{ number_format($data->total_harga, 0, ',', '.') }}
                                         </div>
-                                        <div class="text-muted" style="font-size: 11px;">
-                                            {{ $data->items->sum('jumlah') }} item barang
+                                        @php
+                                            $totalItemQty = $data->items->sum('qty') ?: ($data->items->count() ?: 1);
+                                        @endphp
+                                        <div class="text-muted" style="font-size: 11.5px;">
+                                            <i class="fa-solid fa-bag-shopping text-muted mr-1"></i>{{ $totalItemQty }} item barang
+                                            @if($data->items->count() > 1)
+                                                <small class="text-muted">({{ $data->items->count() }} jenis)</small>
+                                            @endif
                                         </div>
                                         <div class="mt-1">
                                             @if($data->metode_pembayaran === 'midtrans' || $data->metode_pembayaran === 'online')
