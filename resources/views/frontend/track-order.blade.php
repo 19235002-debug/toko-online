@@ -1039,7 +1039,9 @@
 					_token: '{{ csrf_token() }}',
 					target: val
 				}, function(resp) {
-					swal.close();
+					if (typeof swal !== 'undefined' && typeof swal.close === 'function') {
+						try { swal.close(); } catch (e) {}
+					}
 					if (resp && resp.success) {
 						if (resp.mode === 'cod') {
 							swal("Metode Berhasil Diubah!", resp.message, "success").then(function() {
@@ -1055,7 +1057,9 @@
 						swal("Gagal", resp.message || "Gagal mengubah metode pembayaran.", "error");
 					}
 				}).fail(function(xhr) {
-					swal.close();
+					if (typeof swal !== 'undefined' && typeof swal.close === 'function') {
+						try { swal.close(); } catch (e) {}
+					}
 					var err = xhr.responseJSON ? xhr.responseJSON.message : "Terjadi kesalahan pada server.";
 					swal("Gagal", err, "error");
 				});

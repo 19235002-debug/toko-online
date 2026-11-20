@@ -562,6 +562,8 @@
 		}
 
 		function openSwitchPaymentModal() {
+			$('#switch-payment-content').show();
+			$('#switch-payment-loading').hide();
 			$('#modalOrderReceipt').modal('hide');
 			$('#modalSwitchPayment').modal('show');
 		}
@@ -573,22 +575,19 @@
 				return;
 			}
 
-			$('#modalSwitchPayment').modal('hide');
-
-			swal({
-				title: "Memproses...",
-				text: "Sedang mengubah metode pembayaran...",
-				icon: "info",
-				buttons: false,
-				closeOnClickOutside: false,
-				closeOnEsc: false
-			});
+			// Tampilkan indikator loading bersih di dalam modal
+			$('#switch-payment-content').hide();
+			$('#switch-payment-loading').show();
 
 			$.post('/pesanan/switch-payment/' + encodeURIComponent(res.kode_order), {
 				_token: $('input[name="_token"]').val() || '{{ csrf_token() }}',
 				target: target
 			}, function(resp) {
-				swal.close();
+				// Reset tampilan modal switch
+				$('#switch-payment-content').show();
+				$('#switch-payment-loading').hide();
+				$('#modalSwitchPayment').modal('hide');
+
 				if (!resp || !resp.success) {
 					swal("Gagal", resp.message || "Gagal mengubah metode pembayaran.", "error");
 					showModernOrderReceipt(res, 'pending');
@@ -597,6 +596,7 @@
 
 				if (resp.mode === 'cod') {
 					res.metode_pembayaran = 'cod';
+					window.lastCheckoutRes = res;
 					showModernOrderReceipt(res, 'cod');
 					swal("Metode Berhasil Diubah!", "Pesanan Anda kini menggunakan metode COD (Bayar di Tempat). Bayar tunai ke kurir saat paket diantar.", "success");
 				} else if (resp.mode === 'online') {
@@ -614,7 +614,9 @@
 					}, 250);
 				}
 			}).fail(function(xhr) {
-				swal.close();
+				$('#switch-payment-content').show();
+				$('#switch-payment-loading').hide();
+				$('#modalSwitchPayment').modal('hide');
 				var err = xhr.responseJSON ? xhr.responseJSON.message : "Terjadi kesalahan pada server.";
 				swal("Gagal", err, "error");
 				showModernOrderReceipt(res, 'pending');

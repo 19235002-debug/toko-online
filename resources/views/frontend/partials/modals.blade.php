@@ -523,33 +523,42 @@
 					</button>
 				</div>
 				<div class="modal-body p-4 bg-white">
-					<p class="text-muted small mb-3">Pilih bagaimana Anda ingin menyelesaikan pembayaran pesanan ini:</p>
+					<div id="switch-payment-content">
+						<p class="text-muted small mb-3">Pilih bagaimana Anda ingin menyelesaikan pembayaran pesanan ini:</p>
 
-					<!-- Pilihan 1: Reset Online Channel -->
-					<div class="p-3 mb-3 rounded border" style="background: #f8fafc; cursor: pointer; transition: all 0.2s ease;" onclick="executeSwitchPayment('reset_online')" onmouseover="this.style.borderColor='#6366f1'; this.style.background='#f5f7ff';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.background='#f8fafc';">
-						<div class="d-flex align-items-center justify-content-between mb-1">
-							<strong class="text-dark" style="font-size: 13.5px;"><i class="zmdi zmdi-refresh mr-1 text-primary"></i> Pilih Channel Online Lain</strong>
-							<span class="badge badge-primary px-2 py-0.5" style="font-size: 10px;">QRIS / Bank VA</span>
+						<!-- Pilihan 1: Reset Online Channel -->
+						<div class="p-3 mb-3 rounded border" style="background: #f8fafc; cursor: pointer; transition: all 0.2s ease;" onclick="executeSwitchPayment('reset_online')" onmouseover="this.style.borderColor='#6366f1'; this.style.background='#f5f7ff';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.background='#f8fafc';">
+							<div class="d-flex align-items-center justify-content-between mb-1">
+								<strong class="text-dark" style="font-size: 13.5px;"><i class="zmdi zmdi-refresh mr-1 text-primary"></i> Pilih Channel Online Lain</strong>
+								<span class="badge badge-primary px-2 py-0.5" style="font-size: 10px;">QRIS / Bank VA</span>
+							</div>
+							<small class="text-muted d-block" style="font-size: 11.5px; line-height: 1.4;">
+								Reset transaksi dan buka kembali menu pilihan pembayaran dari awal (QRIS, VA Bank BCA, Mandiri, BNI, BRI, E-Wallet).
+							</small>
 						</div>
-						<small class="text-muted d-block" style="font-size: 11.5px; line-height: 1.4;">
-							Reset transaksi dan buka kembali menu pilihan pembayaran dari awal (QRIS, VA Bank BCA, Mandiri, BNI, BRI, E-Wallet).
-						</small>
+
+						<!-- Pilihan 2: Ganti ke COD -->
+						<div class="p-3 mb-3 rounded border" style="background: #f8fafc; cursor: pointer; transition: all 0.2s ease;" onclick="executeSwitchPayment('cod')" onmouseover="this.style.borderColor='#10b981'; this.style.background='#ecfdf5';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.background='#f8fafc';">
+							<div class="d-flex align-items-center justify-content-between mb-1">
+								<strong class="text-dark" style="font-size: 13.5px;"><i class="zmdi zmdi-truck mr-1 text-success"></i> Ubah ke COD (Bayar di Tempat)</strong>
+								<span class="badge badge-success px-2 py-0.5" style="font-size: 10px;">Tunai</span>
+							</div>
+							<small class="text-muted d-block" style="font-size: 11.5px; line-height: 1.4;">
+								Bayar tunai ke kurir saat paket sampai di alamat Anda tanpa perlu membayar online / ke gerai minimarket.
+							</small>
+						</div>
+
+						<button type="button" class="btn btn-light btn-block font-weight-bold py-2 border" data-dismiss="modal" style="border-radius: 10px; font-size: 13px;">
+							Batal
+						</button>
 					</div>
 
-					<!-- Pilihan 2: Ganti ke COD -->
-					<div class="p-3 mb-3 rounded border" style="background: #f8fafc; cursor: pointer; transition: all 0.2s ease;" onclick="executeSwitchPayment('cod')" onmouseover="this.style.borderColor='#10b981'; this.style.background='#ecfdf5';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.background='#f8fafc';">
-						<div class="d-flex align-items-center justify-content-between mb-1">
-							<strong class="text-dark" style="font-size: 13.5px;"><i class="zmdi zmdi-truck mr-1 text-success"></i> Ubah ke COD (Bayar di Tempat)</strong>
-							<span class="badge badge-success px-2 py-0.5" style="font-size: 10px;">Tunai</span>
-						</div>
-						<small class="text-muted d-block" style="font-size: 11.5px; line-height: 1.4;">
-							Bayar tunai ke kurir saat paket sampai di alamat Anda tanpa perlu membayar online / ke gerai minimarket.
-						</small>
+					<!-- State Loading saat memproses perubahan -->
+					<div id="switch-payment-loading" style="display: none;" class="text-center py-4">
+						<div class="spinner-border text-primary mb-3" role="status" style="width: 2.5rem; height: 2.5rem; border-width: 0.25em;"></div>
+						<h6 class="font-weight-bold text-dark mb-1">Sedang Memproses...</h6>
+						<p class="text-muted small mb-0">Memperbarui metode pembayaran pesanan Anda...</p>
 					</div>
-
-					<button type="button" class="btn btn-light btn-block font-weight-bold py-2 border" data-dismiss="modal" style="border-radius: 10px; font-size: 13px;">
-						Batal
-					</button>
 				</div>
 			</div>
 		</div>

@@ -34,19 +34,29 @@
 			var args = Array.prototype.slice.call(arguments);
 			if (args.length === 1 && typeof args[0] === 'object' && args[0] !== null) {
 				var cfg = args[0];
-				if (cfg.buttons) {
+				if (cfg.buttons !== false && (cfg.buttons || cfg.button)) {
 					var swal2Cfg = {
 						title: cfg.title || '',
 						text: cfg.text || '',
 						icon: cfg.icon || 'info',
 						confirmButtonColor: '#717fe0',
 						cancelButtonColor: '#6c757d',
-						showCancelButton: Boolean(cfg.buttons.cancel),
-						cancelButtonText: (typeof cfg.buttons.cancel === 'string') ? cfg.buttons.cancel : 'Tutup',
-						confirmButtonText: (cfg.buttons.confirm && cfg.buttons.confirm.text) ? cfg.buttons.confirm.text : 'OK',
+						showCancelButton: Boolean(cfg.buttons && cfg.buttons.cancel),
+						cancelButtonText: (cfg.buttons && typeof cfg.buttons.cancel === 'string') ? cfg.buttons.cancel : 'Tutup',
+						confirmButtonText: (cfg.buttons && cfg.buttons.confirm && cfg.buttons.confirm.text) ? cfg.buttons.confirm.text : 'OK',
 					};
 					return Swal.fire(swal2Cfg).then(function(result) {
 						return result.isConfirmed;
+					});
+				}
+				if (cfg.buttons === false) {
+					return Swal.fire({
+						title: cfg.title || '',
+						text: cfg.text || '',
+						icon: cfg.icon || 'info',
+						showConfirmButton: false,
+						allowOutsideClick: false,
+						allowEscapeKey: false
 					});
 				}
 				return window.Toast.fire({
@@ -60,6 +70,12 @@
 				text: args[1] || '',
 				icon: args[2] || 'info'
 			});
+		};
+
+		window.swal.close = function() {
+			if (typeof Swal !== 'undefined' && typeof Swal.close === 'function') {
+				Swal.close();
+			}
 		};
 	</script>
 
