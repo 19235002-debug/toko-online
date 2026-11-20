@@ -215,6 +215,18 @@
                                            class="btn btn-outline-success btn-sm btn-block font-weight-bold py-1.5" style="border-radius: 10px;">
                                             <i class="fa-brands fa-whatsapp mr-1"></i> Kirim Resi ke WhatsApp Pembeli
                                         </a>
+
+                                        <!-- Tombol Cepat: Simulasi Paket Tiba & Selesai -->
+                                        <form action="{{ route('order.updateStatus', $order->id_order) }}" method="POST" class="mt-1.5">
+                                            @csrf
+                                            @method('PUT')
+                                            <input type="hidden" name="status" value="selesai">
+                                            <button type="submit" class="btn btn-success btn-sm btn-block font-weight-bold py-2 shadow-sm"
+                                                    style="border-radius: 10px; background: #059669; border-color: #059669;"
+                                                    onclick="return confirm('Simulasikan paket telah sampai dan selesaikan pesanan ini?')">
+                                                <i class="fa-solid fa-circle-check mr-1.5"></i> Tandai Paket Sampai (Selesai)
+                                            </button>
+                                        </form>
                                     </div>
                                 </div>
                             @elseif($order->status === 'diproses' || ($order->status === 'pending' && $order->metode_pembayaran === 'cod'))

@@ -323,8 +323,9 @@ class BiteshipService
                     $order->biteship_order_id = $biteshipId;
                     $order->biteship_status = $status;
                     $order->biteship_tracking_url = $trackingLink ?: 'https://biteship.com/track/' . $courierCompany . '/' . $waybillId;
-                    if ($order->status === 'menunggu_pembayaran' || $order->status === 'pending') {
-                        $order->status = 'diproses';
+                    if ($order->status !== 'dikirim' && $order->status !== 'selesai') {
+                        $order->status = 'dikirim';
+                        $order->shipped_at = $order->shipped_at ?: now();
                     }
                     $order->save();
 
@@ -354,8 +355,9 @@ class BiteshipService
         $order->biteship_order_id = $fakeBiteshipId;
         $order->biteship_status = 'allocated';
         $order->biteship_tracking_url = "https://biteship.com/track/{$courierCompany}/{$generatedWaybill}";
-        if ($order->status === 'menunggu_pembayaran' || $order->status === 'pending') {
-            $order->status = 'diproses';
+        if ($order->status !== 'dikirim' && $order->status !== 'selesai') {
+            $order->status = 'dikirim';
+            $order->shipped_at = $order->shipped_at ?: now();
         }
         $order->save();
 

@@ -291,6 +291,12 @@ class OrderController extends Controller
 
         $res = BiteshipService::createOrder($order);
         if ($res['success']) {
+            $order->refresh();
+            if ($order->status !== 'dikirim' && $order->status !== 'selesai') {
+                $order->status = 'dikirim';
+                $order->shipped_at = $order->shipped_at ?: now();
+                $order->save();
+            }
             Alert::success('Pick-up Berhasil', $res['message']);
         } else {
             Alert::error('Gagal Request Pick-up', $res['message'] ?? 'Terjadi kesalahan saat memproses pick-up Biteship.');
