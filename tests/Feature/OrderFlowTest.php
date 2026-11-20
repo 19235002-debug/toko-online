@@ -190,5 +190,43 @@ class OrderFlowTest extends TestCase
         $this->assertNotNull($order->completed_at);
         $this->assertNotNull($order->paid_at);
     }
+
+    public function test_rajaongkir_delivered_waybill_automatically_completes_shipped_order(): void
+    {
+        $order = Order::create([
+            'kode_order' => 'ORD-RO-DONE-' . uniqid(),
+            'nama_customer' => 'Waybill Buyer',
+            'no_hp' => '081234567890',
+            'alamat' => 'Jl. Melati',
+            'ekspedisi' => 'J&T',
+            'kurir' => 'J&T EZ',
+            'no_resi' => 'JP99881122',
+            'metode_pembayaran' => 'cod',
+            'total_harga' => 115000,
+            'ongkir' => 15000,
+            'status' => 'dikirim',
+        ]);
+
+        // Belum sampai -> tetap dikirim
+        $notYet = OrderController::syncOrderWithRajaOngkir($order, [
+            'delivered' => false,
+            'status' => 'ON PROCESS',
+            'manifest' => [],
+        ]);
+        $this->assertFalse($notYet);
+        $this->assertEquals('dikirim', $order->fresh()->status);
+
+        // Sudah sampai (delivered: true) -> otomatis selesai + COD paid_at tercatat
+        $done = OrderController::syncOrderWithRajaOngkir($order, [
+            'delivered' => true,
+            'status' => 'DELIVERED',
+            'manifest' => [],
+        ]);
+        $this->assertTrue($done);
+        $order->refresh();
+        $this->assertEquals('selesai', $order->status);
+        $this->assertNotNull($order->completed_at);
+        $this->assertNotNull($order->paid_at);
+    }
 }
 

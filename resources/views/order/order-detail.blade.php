@@ -49,6 +49,35 @@
                                 @endif
                             </div>
 
+                            @if(in_array($order->status, ['diproses', 'pending']) && $order->status !== 'dibatalkan')
+                            <div class="mb-3 p-3 rounded" style="background: linear-gradient(135deg, #fef3c7, #fef9c3); border: 1px solid #fde047;">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fa-solid fa-bolt text-warning mr-2" style="font-size: 16px;"></i>
+                                    <strong style="color: #92400e; font-size: 13px;">Resi Otomatis &amp; Penjemputan Biteship</strong>
+                                </div>
+                                <p class="small text-muted mb-2">Klik tombol di bawah untuk membuat resi otomatis dan menjadwalkan kurir <strong>{{ $order->ekspedisi ?: 'JNE/J&T' }}</strong> menjemput paket ke toko.</p>
+                                <form action="{{ route('order.requestPickup', $order->id_order) }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="btn btn-warning btn-block font-weight-bold shadow-sm" style="background: linear-gradient(135deg, #f59e0b, #d97706); border: none; color: #fff;">
+                                        <i class="fa-solid fa-truck-pickup mr-1"></i> Request Pick-up Kurir (Otomatis)
+                                    </button>
+                                </form>
+                            </div>
+                            @endif
+
+                            @if($order->no_resi)
+                            <div class="mb-3">
+                                <a href="{{ route('order.shippingLabel', $order->id_order) }}" target="_blank" class="btn btn-dark btn-block font-weight-bold">
+                                    <i class="fa fa-barcode mr-1"></i> Cetak Label Resi Thermal (100x150)
+                                </a>
+                                @if($order->biteship_tracking_url)
+                                <a href="{{ $order->biteship_tracking_url }}" target="_blank" class="btn btn-outline-info btn-block btn-sm mt-1">
+                                    <i class="fa fa-location-arrow mr-1"></i> Lacak Pengiriman di Portal Biteship
+                                </a>
+                                @endif
+                            </div>
+                            @endif
+
                             <form action="{{ route('order.updateStatus', $order->id_order) }}" method="POST">
                                 @csrf
                                 @method('PUT')

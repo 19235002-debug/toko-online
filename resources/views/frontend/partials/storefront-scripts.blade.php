@@ -680,6 +680,7 @@
 				alamat: $('#checkout_alamat').val(),
 				metode_pembayaran: $('input[name="metode_pembayaran"]:checked').val(),
 				destination_id: $('#checkout_destination_id').val(),
+				destination_postal_code: $('#checkout_destination_postal_code').val(),
 				destination_label: $('#checkout_destination_label').val(),
 				courier_code: $('#checkout_courier_code').val(),
 				courier_service: $('#checkout_courier_service').val(),
@@ -1541,7 +1542,8 @@
 						}
 						var html = '';
 						res.destinations.forEach(function(d) {
-							html += '<a href="javascript:void(0);" class="list-group-item list-group-item-action py-2 px-3 small" onclick="selectRajaOngkirDestination(' + parseInt(d.id, 10) + ', \'' + escapeHtml(d.label).replace(/'/g, "\\'") + '\')">' +
+							var postal = d.postal_code || '';
+							html += '<a href="javascript:void(0);" class="list-group-item list-group-item-action py-2 px-3 small" onclick="selectRajaOngkirDestination(\'' + escapeHtml(String(d.id)).replace(/'/g, "\\'") + '\', \'' + escapeHtml(d.label).replace(/'/g, "\\'") + '\', \'' + escapeHtml(String(postal)).replace(/'/g, "\\'") + '\')">' +
 								escapeHtml(d.label) +
 							'</a>';
 						});
@@ -1564,6 +1566,7 @@
 				$('#ro-destination-input').val('');
 				$('#ro-selected-dest-badge').hide().text('');
 				$('#checkout_destination_id').val('');
+				$('#checkout_destination_postal_code').val('');
 				$('#checkout_destination_label').val('');
 			}
 			$('#ro-destination-dropdown').hide().empty();
@@ -1577,22 +1580,24 @@
 			recalculateCheckoutTotals();
 		}
 
-		function selectRajaOngkirDestination(destId, destLabel) {
+		function selectRajaOngkirDestination(destId, destLabel, postalCode) {
 			resetRajaOngkirSelection(false);
 			$('#ro-destination-input').val(destLabel);
 			$('#checkout_destination_id').val(destId);
+			$('#checkout_destination_postal_code').val(postalCode || '');
 			$('#checkout_destination_label').val(destLabel);
 			$('#ro-selected-dest-badge').text('Tujuan dipilih: ' + destLabel).show();
 			$('#ro-shipping-hint').attr('style', 'display: none !important;');
 
 			var $wrap = $('#ro-courier-options-wrap');
 			var $list = $('#ro-courier-options-list');
-			$list.html('<div class="text-muted small py-2">Menghitung tarif kurir...</div>');
+			$list.html('<div class="text-muted small py-2">Menghitung tarif kurir Biteship...</div>');
 			$wrap.show();
 
 			$.post('{{ route("frontend.shipping.cost") }}', {
 				_token: $('input[name="_token"]').val() || '{{ csrf_token() }}',
 				destination_id: destId,
+				destination_postal_code: postalCode || '',
 				total_qty: window.currentCheckoutTotalQty || 1
 			}, function(res) {
 				if (!res || !res.options || res.options.length === 0) {

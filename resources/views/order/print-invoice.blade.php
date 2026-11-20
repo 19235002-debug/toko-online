@@ -68,8 +68,12 @@
         <table>
             <tr>
                 <td>
-                    <div class="title">COZA STORE</div>
-                    <small>Official Online Store - Kelompok 3</small>
+                    @if(store_logo_url())
+                        <img src="{{ store_logo_url() }}" alt="{{ store_setting()->nama_toko ?: 'Coza Store' }}" style="max-height: 44px; margin-bottom: 4px;"><br>
+                    @else
+                        <div class="title">{{ strtoupper(store_setting()->nama_toko ?: 'COZA STORE') }}</div>
+                    @endif
+                    <small>{{ store_setting()->alamat_toko ?: 'Official Online Store' }}</small>
                 </td>
                 <td class="text-right">
                     <h2 style="margin: 0; color: #555;">FAKTUR PENJUALAN</h2>

@@ -31,4 +31,14 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'biteship' => [
+        'api_key' => env('BITESHIP_API_KEY', ''),
+        'base_url' => env('BITESHIP_BASE_URL', 'https://api.biteship.com'),
+        'origin_area_id' => env('BITESHIP_ORIGIN_AREA_ID', 'IDNP6IDNC148IDND843IDZ12250'),
+        'origin_postal_code' => env('BITESHIP_ORIGIN_POSTAL_CODE', '12250'),
+        'origin_address' => env('BITESHIP_ORIGIN_ADDRESS', 'Jl. Jendral Sudirman No. 123, Senayan, Jakarta Pusat'),
+        'origin_contact_name' => env('BITESHIP_ORIGIN_NAME', 'Kelompok 3 Fashion Store'),
+        'origin_contact_phone' => env('BITESHIP_ORIGIN_PHONE', '081234567890'),
+    ],
+
 ];

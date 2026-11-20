@@ -4,8 +4,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('title') | Kelompok 3 Admin</title>
-    <link rel="icon" type="image/png" href="{{ asset('logo.png') }}">
+    <title>@yield('title') | {{ store_setting()->nama_toko ?: 'Coza Store' }} Admin</title>
+    <link rel="icon" type="image/png" href="{{ store_favicon_url() }}">
 
     <!-- Google Font: Outfit (TailAdmin) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -65,15 +65,19 @@
             <!-- Sidebar Brand Header -->
             <div :class="sidebarToggle ? 'justify-center' : 'justify-between'" class="flex items-center gap-3 border-b border-gray-100 py-4.5 dark:border-gray-800">
                 <a href="/dashboard" class="flex items-center gap-3">
-                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-blue-500 p-1 shadow-sm">
-                        <img src="{{ asset('logo.png') }}" alt="Logo" class="h-full w-full rounded-lg object-cover bg-white">
-                    </div>
-                    <div :class="sidebarToggle ? 'xl:hidden' : ''" class="leading-tight">
-                        <div class="text-base font-bold tracking-tight text-gray-900 dark:text-white">
-                            Kelompok <span style="color: #465fff;">3</span>
+                    @if(store_logo_url())
+                        <img src="{{ store_logo_url() }}" alt="{{ store_setting()->nama_toko ?: 'Coza Store' }}" class="h-10 max-w-[140px] object-contain">
+                    @else
+                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-blue-500 text-white font-bold shadow-sm">
+                            {{ strtoupper(substr(store_setting()->nama_toko ?: 'C', 0, 1)) }}
                         </div>
-                        <div class="text-[11px] font-medium text-gray-400">Admin Workspace</div>
-                    </div>
+                        <div :class="sidebarToggle ? 'xl:hidden' : ''" class="leading-tight">
+                            <div class="text-base font-bold tracking-tight text-gray-900 dark:text-white">
+                                {{ store_setting()->nama_toko ?: 'Coza Store' }}
+                            </div>
+                            <div class="text-[11px] font-medium text-gray-400">Admin Panel</div>
+                        </div>
+                    @endif
                 </a>
                 <button
                     type="button"

@@ -12,6 +12,7 @@ use App\Models\BarangVariasi;
 use App\Models\BarangGambar;
 use App\Models\Voucher;
 use App\Services\ImageCompressor;
+use App\Services\BiteshipService;
 use App\Services\RajaOngkirService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -469,10 +470,18 @@ class FrontendController extends Controller
             }
         }
 
-        // Riwayat perjalanan paket dari RajaOngkir (jika resi sudah diinput admin)
+        // Riwayat perjalanan paket dari Biteship / kurir (jika resi sudah diinput admin / otomatis terbit)
         $tracking = null;
         if ($order && $order->no_resi && in_array($order->status, ['dikirim', 'selesai'], true)) {
-            $tracking = RajaOngkirService::trackWaybill($order->no_resi, $order->kurir_kode ?: strtolower((string) $order->ekspedisi));
+            $tracking = BiteshipService::trackWaybill($order->no_resi, $order->kurir_kode ?: (string) $order->ekspedisi);
+            if (!$tracking) {
+                $tracking = RajaOngkirService::trackWaybill($order->no_resi, $order->kurir_kode ?: (string) $order->ekspedisi);
+            }
+            if ($order->status === 'dikirim' && !empty($tracking)) {
+                if (OrderController::syncOrderWithBiteship($order, $tracking)) {
+                    $order->refresh();
+                }
+            }
         }
 
         return view('frontend.track-order', compact('order', 'keyword', 'searched', 'tracking'));
@@ -539,12 +548,16 @@ class FrontendController extends Controller
     }
 
     /**
-     * Cari kecamatan / kota tujuan pengiriman via RajaOngkir.
+     * Cari kecamatan / kelurahan / kota tujuan pengiriman via Biteship Maps API (fallback RajaOngkir).
      */
     public function shippingDestinations(Request $request)
     {
         $q = trim((string) $request->query('q', ''));
-        $results = RajaOngkirService::searchDestination($q, 15);
+        $results = BiteshipService::searchArea($q, 15);
+
+        if (empty($results)) {
+            $results = RajaOngkirService::searchDestination($q, 15);
+        }
 
         return response()->json([
             'success' => true,
@@ -553,19 +566,25 @@ class FrontendController extends Controller
     }
 
     /**
-     * Hitung daftar tarif ongkir kurir (JNE, J&T, SiCepat) via RajaOngkir.
+     * Hitung daftar tarif ongkir kurir (JNE, J&T, SiCepat, Anteraja) via Biteship Rates API.
      */
     public function shippingCost(Request $request)
     {
         $validated = $request->validate([
-            'destination_id' => 'required|integer|min:1',
+            'destination_id' => 'required',
             'total_qty' => 'nullable|integer|min:1',
+            'destination_postal_code' => 'nullable|string|max:10',
         ]);
 
         $qty = max(1, intval($validated['total_qty'] ?? 1));
-        $weightGrams = RajaOngkirService::weightForQty($qty);
+        $weightGrams = BiteshipService::weightForQty($qty);
+        $postal = $request->input('destination_postal_code');
 
-        $options = RajaOngkirService::calculateCost((int) $validated['destination_id'], $weightGrams);
+        $options = BiteshipService::calculateCost($validated['destination_id'], $weightGrams, $postal);
+
+        if (empty($options)) {
+            $options = RajaOngkirService::calculateCost($validated['destination_id'], $weightGrams);
+        }
 
         return response()->json([
             'success' => true,
@@ -867,8 +886,9 @@ class FrontendController extends Controller
             'no_hp' => ['required', 'regex:/^[0-9]{10,15}$/'],
             'alamat' => 'required|string',
             'metode_pembayaran' => 'required|in:midtrans,cod',
-            'destination_id' => 'required|integer|min:1',
+            'destination_id' => 'required',
             'destination_label' => 'required|string|max:255',
+            'destination_postal_code' => 'nullable|string|max:10',
             'courier_code' => 'required|string|max:20',
             'courier_service' => 'required|string|max:50',
             'catatan' => 'nullable|string',
@@ -879,8 +899,8 @@ class FrontendController extends Controller
             'no_hp.required' => 'Nomor WhatsApp / HP wajib diisi.',
             'no_hp.regex' => 'Nomor WhatsApp / HP hanya boleh berupa angka (10 - 15 digit, contoh: 081234567890).',
             'alamat.required' => 'Alamat pengiriman wajib diisi.',
-            'destination_id.required' => 'Pilih kecamatan / kota tujuan pengiriman terlebih dahulu.',
-            'destination_label.required' => 'Pilih kecamatan / kota tujuan pengiriman terlebih dahulu.',
+            'destination_id.required' => 'Pilih kecamatan / kelurahan tujuan pengiriman terlebih dahulu.',
+            'destination_label.required' => 'Pilih kecamatan / kelurahan tujuan pengiriman terlebih dahulu.',
             'courier_code.required' => 'Pilih layanan kurir pengiriman terlebih dahulu.',
             'courier_service.required' => 'Pilih layanan kurir pengiriman terlebih dahulu.',
         ]);
@@ -894,18 +914,29 @@ class FrontendController extends Controller
             ], 422);
         }
 
-        // Hitung ulang ongkir di server berdasarkan tarif resmi RajaOngkir (tidak mempercayai nilai dari browser)
+        // Hitung ulang ongkir di server berdasarkan tarif resmi Biteship / kurir
         $totalQty = 0;
         foreach ($cart as $c) {
             $totalQty += max(0, intval($c['qty'] ?? 1));
         }
-        $beratGram = RajaOngkirService::weightForQty($totalQty);
-        $shipping = RajaOngkirService::findOption(
-            (int) $validated['destination_id'],
+        $beratGram = BiteshipService::weightForQty($totalQty);
+        $postal = $request->input('destination_postal_code');
+        $shipping = BiteshipService::findOption(
+            $validated['destination_id'],
             $beratGram,
             $validated['courier_code'],
-            $validated['courier_service']
+            $validated['courier_service'],
+            $postal
         );
+
+        if (!$shipping) {
+            $shipping = RajaOngkirService::findOption(
+                $validated['destination_id'],
+                $beratGram,
+                $validated['courier_code'],
+                $validated['courier_service']
+            );
+        }
 
         if (!$shipping) {
             return response()->json([
@@ -1009,7 +1040,9 @@ class FrontendController extends Controller
                     'nama_customer' => $validated['nama_customer'],
                     'no_hp' => $validated['no_hp'],
                     'alamat' => trim($validated['alamat']),
-                    'destination_id' => (int) $validated['destination_id'],
+                    'destination_id' => is_numeric($validated['destination_id']) ? (int) $validated['destination_id'] : null,
+                    'destination_area_id' => (string) $validated['destination_id'],
+                    'destination_postal_code' => $validated['destination_postal_code'] ?? null,
                     'destination_label' => trim($validated['destination_label']),
                     'catatan' => $validated['catatan'] ?? null,
                     'kode_voucher' => $kodeVoucher,

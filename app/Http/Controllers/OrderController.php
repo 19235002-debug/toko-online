@@ -7,6 +7,9 @@ use App\Models\OrderItem;
 use App\Models\Barang;
 use App\Models\BarangVariasi;
 use App\Models\Voucher;
+use App\Models\Setting;
+use App\Services\BiteshipService;
+use App\Services\RajaOngkirService;
 use Illuminate\Http\Request;
 use RealRashid\SweetAlert\Facades\Alert;
 use Exception;
@@ -18,8 +21,9 @@ class OrderController extends Controller
      */
     public function index(Request $request)
     {
-        // Otomatis sinkronkan pesanan Midtrans yang pending di latar belakang tanpa perlu klik manual
+        // Otomatis sinkronkan pesanan Midtrans pending & resi RajaOngkir yang sudah terkirim
         self::syncPendingMidtransOrders(15);
+        self::syncShippedOrdersWithRajaOngkir(10);
 
         $status = $request->query('status');
         $search = trim((string) $request->query('search', ''));
@@ -54,7 +58,9 @@ class OrderController extends Controller
             'dibatalkan' => Order::where('status', 'dibatalkan')->count(),
         ];
 
-        return view('order.order', compact('orders', 'counts', 'status', 'search', 'metode'));
+        $biteshipWallet = BiteshipService::getAccountBalance();
+
+        return view('order.order', compact('orders', 'counts', 'status', 'search', 'metode', 'biteshipWallet'));
     }
 
     /**
@@ -67,6 +73,12 @@ class OrderController extends Controller
         // Otomatis sinkronkan status dengan Midtrans jika status masih pending
         if ($order->status === 'pending' && $order->metode_pembayaran === 'midtrans') {
             self::syncOrderStatusWithMidtrans($order);
+            $order->refresh();
+        }
+
+        // Otomatis selesaikan pesanan jika resi RajaOngkir sudah berstatus delivered
+        if ($order->status === 'dikirim' && !empty($order->no_resi)) {
+            self::syncOrderWithRajaOngkir($order);
             $order->refresh();
         }
 
@@ -253,6 +265,145 @@ class OrderController extends Controller
         }
 
         return redirect()->route('order.show', $id);
+    }
+
+    /**
+     * Request Pick-up otomatis & terbitkan resi resmi via Biteship API.
+     */
+    public function requestBiteshipPickup($id)
+    {
+        $order = Order::with(['items.barang', 'user'])->where('id_order', $id)->firstOrFail();
+
+        if ($order->status === 'dibatalkan') {
+            Alert::error('Gagal', 'Pesanan yang telah dibatalkan tidak dapat di-request pick-up.');
+            return redirect()->back();
+        }
+
+        if ($order->metode_pembayaran === 'midtrans' && !$order->paid_at) {
+            self::syncOrderStatusWithMidtrans($order);
+            $order->refresh();
+            if (!$order->paid_at) {
+                Alert::warning('Belum Lunas', 'Pesanan belum dibayar melalui Midtrans. Menunggu pembayaran pembeli.');
+                return redirect()->back();
+            }
+        }
+
+        $res = BiteshipService::createOrder($order);
+        if ($res['success']) {
+            Alert::success('Pick-up Berhasil', $res['message']);
+        } else {
+            Alert::error('Gagal Request Pick-up', $res['message'] ?? 'Terjadi kesalahan saat memproses pick-up Biteship.');
+        }
+
+        return redirect()->back();
+    }
+
+    /**
+     * Cetak label pengiriman resmi (Thermal / Standard Shipping Label) berbarcode kurir.
+     */
+    public function printShippingLabel($id)
+    {
+        $order = Order::with(['items.barang', 'user'])->where('id_order', $id)->firstOrFail();
+        $setting = Setting::first();
+        return view('order.shipping-label', compact('order', 'setting'));
+    }
+
+    /**
+     * Webhook Real-time dari Biteship (POST /api/biteship/webhook).
+     */
+    public function biteshipWebhook(Request $request)
+    {
+        $result = BiteshipService::handleWebhook($request->all());
+        return response()->json($result);
+    }
+
+    /**
+     * Sinkronkan otomatis pesanan berstatus 'dikirim' dengan status pelacakan resi Biteship / kurir.
+     * Jika kurir melaporkan paket sudah diterima (delivered), ubah status menjadi 'selesai'.
+     */
+    public static function syncShippedOrdersWithBiteship($limit = 10): int
+    {
+        $completedCount = 0;
+        try {
+            $shippedOrders = Order::where('status', 'dikirim')
+                ->whereNotNull('no_resi')
+                ->where('no_resi', '!=', '')
+                ->latest('id_order')
+                ->take($limit)
+                ->get();
+
+            foreach ($shippedOrders as $order) {
+                if (self::syncOrderWithBiteship($order)) {
+                    $completedCount++;
+                }
+            }
+        } catch (Exception $e) {
+            // Abaikan agar halaman tetap dimuat lancar saat limit API tercapai / offline
+        }
+
+        return $completedCount;
+    }
+
+    public static function syncShippedOrdersWithRajaOngkir($limit = 10): int
+    {
+        return self::syncShippedOrdersWithBiteship($limit);
+    }
+
+    public static function syncOrderWithBiteship(Order $order, ?array $tracking = null): bool
+    {
+        if ($order->status !== 'dikirim' || empty($order->no_resi)) {
+            return false;
+        }
+
+        $courier = $order->kurir_kode ?: $order->ekspedisi;
+        if (empty($courier)) {
+            return false;
+        }
+
+        $tracking = $tracking ?? BiteshipService::trackWaybill($order->no_resi, $courier);
+        if (!$tracking) {
+            $tracking = RajaOngkirService::trackWaybill($order->no_resi, $courier);
+        }
+
+        if (!$tracking) {
+            return false;
+        }
+
+        $isDelivered = !empty($tracking['delivered'])
+            || strtoupper((string) ($tracking['status'] ?? '')) === 'DELIVERED';
+
+        if (!$isDelivered) {
+            return false;
+        }
+
+        $order->status = 'selesai';
+        $order->completed_at = $order->completed_at ?: now();
+        if ($order->metode_pembayaran === 'cod' && !$order->paid_at) {
+            $order->paid_at = now();
+        }
+        $order->save();
+
+        return true;
+    }
+
+    public static function syncOrderWithRajaOngkir(Order $order, ?array $tracking = null): bool
+    {
+        return self::syncOrderWithBiteship($order, $tracking);
+    }
+
+    /**
+     * Tombol sinkronisasi massal resi kurir dari halaman daftar pesanan admin.
+     */
+    public function syncAllShippedOrders()
+    {
+        $updated = self::syncShippedOrdersWithBiteship(20);
+        if ($updated > 0) {
+            Alert::success('Sinkronisasi Selesai', $updated . ' pesanan otomatis diperbarui ke status Selesai berdasarkan resi Biteship.');
+        } else {
+            Alert::info('Info Resi', 'Belum ada paket berstatus Delivered baru dari kurir (atau data pelacakan belum terupdate).');
+        }
+
+        return redirect()->route('order.index');
     }
 
     /**

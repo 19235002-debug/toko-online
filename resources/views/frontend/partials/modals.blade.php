@@ -220,7 +220,7 @@
 									<div class="form-group mb-3">
 										<div class="d-flex justify-content-between align-items-center mb-1">
 											<label class="small font-weight-bold text-dark mb-0">Kelurahan / Kecamatan / Kota / Kode Pos Tujuan <span class="text-danger">*</span></label>
-											<span class="badge badge-light border text-primary" style="font-size: 10.5px;">RajaOngkir</span>
+											<span class="badge badge-light border text-primary" style="font-size: 10.5px;"><i class="fa fa-bolt text-warning mr-1"></i>Biteship Otomatis</span>
 										</div>
 										<div class="position-relative">
 											<input type="text" id="ro-destination-input" class="form-control checkout-input-modern" placeholder="Ketik kelurahan, kecamatan, kota, atau kode pos (min. 3 huruf)..." autocomplete="off">
@@ -266,6 +266,7 @@
 										</div>
 
 										<input type="hidden" id="checkout_destination_id" value="">
+										<input type="hidden" id="checkout_destination_postal_code" value="">
 										<input type="hidden" id="checkout_destination_label" value="">
 										<input type="hidden" id="checkout_courier_code" value="">
 										<input type="hidden" id="checkout_courier_service" value="">

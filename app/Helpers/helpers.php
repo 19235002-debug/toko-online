@@ -62,6 +62,26 @@ if (!function_exists('store_setting')) {
     }
 }
 
+if (!function_exists('store_favicon_url')) {
+    function store_favicon_url(): string {
+        $setting = store_setting();
+        if (!empty($setting->favicon)) {
+            return asset('storage/' . $setting->favicon);
+        }
+        return asset('frontend-assets/images/icons/favicon.png');
+    }
+}
+
+if (!function_exists('store_logo_url')) {
+    function store_logo_url(): ?string {
+        $setting = store_setting();
+        if (!empty($setting->logo_toko)) {
+            return asset('storage/' . $setting->logo_toko);
+        }
+        return null;
+    }
+}
+
 if (!function_exists('store_wa_url')) {
     function store_wa_url(string $message = '') {
         $setting = store_setting();

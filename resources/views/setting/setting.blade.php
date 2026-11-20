@@ -23,7 +23,7 @@
     <!-- Main content -->
     <div class="content">
         <div class="container-fluid">
-            <form action="{{ route('setting.update') }}" method="POST">
+            <form action="{{ route('setting.update') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
 
@@ -80,6 +80,45 @@
                                     @error('nama_toko')
                                         <div class="text-danger small mt-1">{{ $message }}</div>
                                     @enderror
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="logo_toko">Logo Toko <small class="text-muted">(Opsional)</small></label>
+                                            <div class="d-flex align-items-center mb-2 p-2 border rounded bg-light" style="gap: 10px; min-height: 54px;">
+                                                @if(!empty($setting->logo_toko))
+                                                    <img src="{{ asset('storage/' . $setting->logo_toko) }}" alt="Logo Toko" style="max-height: 36px; max-width: 140px; object-fit: contain;">
+                                                    <label class="mb-0 ml-auto small text-danger" style="cursor: pointer;">
+                                                        <input type="checkbox" name="hapus_logo" value="1"> Hapus
+                                                    </label>
+                                                @else
+                                                    <span class="font-weight-bold text-dark" style="letter-spacing: 0.04em;">{{ strtoupper($setting->nama_toko ?: 'COZA STORE') }}</span>
+                                                    <small class="text-muted ml-auto">(Default teks)</small>
+                                                @endif
+                                            </div>
+                                            <input type="file" name="logo_toko" id="logo_toko" accept="image/png,image/jpeg,image/webp,image/svg+xml" class="form-control-file @error('logo_toko') is-invalid @enderror">
+                                            <small class="text-muted d-block mt-1" style="font-size: 11px;">Jika kosong, otomatis memakai tulisan <strong>{{ $setting->nama_toko ?: 'Coza Store' }}</strong>. (PNG/JPG/WEBP/SVG, maks. 2 MB)</small>
+                                            @error('logo_toko') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="favicon">Favicon Toko <small class="text-muted">(Opsional)</small></label>
+                                            <div class="d-flex align-items-center mb-2 p-2 border rounded bg-light" style="gap: 10px; min-height: 54px;">
+                                                <img src="{{ store_favicon_url() }}" alt="Favicon" style="width: 32px; height: 32px; object-fit: contain; border-radius: 6px;">
+                                                <span class="small text-muted">{{ !empty($setting->favicon) ? 'Favicon kustom aktif' : 'Favicon default' }}</span>
+                                                @if(!empty($setting->favicon))
+                                                    <label class="mb-0 ml-auto small text-danger" style="cursor: pointer;">
+                                                        <input type="checkbox" name="hapus_favicon" value="1"> Hapus
+                                                    </label>
+                                                @endif
+                                            </div>
+                                            <input type="file" name="favicon" id="favicon" accept="image/png,image/x-icon,image/jpeg,image/webp,image/svg+xml" class="form-control-file @error('favicon') is-invalid @enderror">
+                                            <small class="text-muted d-block mt-1" style="font-size: 11px;">Ikon tab browser untuk frontend &amp; panel admin. (PNG/ICO/SVG, maks. 1 MB)</small>
+                                            @error('favicon') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div class="row">
@@ -152,23 +191,23 @@
                                 <div class="p-3 mb-3 rounded border" style="background: #f8fafc;">
                                     <div class="d-flex justify-content-between align-items-center mb-1">
                                         <strong class="text-dark" style="font-size: 13px;">
-                                            <i class="fa-solid fa-plug-circle-check text-success mr-1"></i> API RajaOngkir (Komerce)
+                                            <i class="fa-solid fa-plug-circle-check text-success mr-1"></i> API Biteship Logistics (Otomatis)
                                         </strong>
-                                        @if(config('rajaongkir.api_key'))
-                                            <span class="badge rounded-pill px-2.5 py-1" style="background: #dcfce7; color: #15803d; font-size: 11px;">Terhubung (Sandbox/Starter)</span>
+                                        @if(config('services.biteship.api_key'))
+                                            <span class="badge rounded-pill px-2.5 py-1" style="background: #dcfce7; color: #15803d; font-size: 11px;">Terhubung (Live/Test)</span>
                                         @else
-                                            <span class="badge rounded-pill px-2.5 py-1" style="background: #fef3c7; color: #b45309; font-size: 11px;">Mode Fallback</span>
+                                            <span class="badge rounded-pill px-2.5 py-1" style="background: #e0f2fe; color: #0284c7; font-size: 11px;">Sandbox Demo Otomatis</span>
                                         @endif
                                     </div>
                                     <div class="text-muted" style="font-size: 11.5px;">
-                                        Origin: <strong>{{ config('rajaongkir.origin_label') }}</strong><br>
-                                        Kurir Aktif: <strong class="text-uppercase">{{ str_replace(':', ', ', config('rajaongkir.couriers')) }}</strong><br>
-                                        Berat Estimasi: <strong>{{ config('rajaongkir.item_weight', 350) }} gram / item</strong>
+                                        Gudang Asal: <strong>{{ config('services.biteship.origin_address') }}</strong><br>
+                                        Fitur: <strong>Cek Ongkir, Resi Otomatis (AWB), Cetak Label, Webhook Lacak Real-Time</strong><br>
+                                        Kurir Didukung: <strong class="text-uppercase">JNE, J&amp;T, SICEPAT, ANTERAJA, GOSEND, GRAB</strong>
                                     </div>
                                 </div>
 
                                 <div class="alert alert-light border mb-0" style="font-size: 12px;">
-                                    <i class="fa fa-info-circle text-primary mr-1"></i> Ongkos kirim saat checkout dihitung otomatis secara real-time mengikuti tarif resmi dari <strong>API RajaOngkir</strong>.
+                                    <i class="fa fa-info-circle text-primary mr-1"></i> Ongkos kirim, resi pengiriman, dan penjemputan kurir otomatis diintegrasikan dengan <strong>Biteship API</strong>.
                                 </div>
                             </div>
                         </div>

@@ -109,6 +109,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
     // Manajemen Pesanan
     Route::get('/order/print/{id}', [OrderController::class, 'printInvoice'])->name('order.print');
+    Route::get('/order/shipping-label/{id}', [OrderController::class, 'printShippingLabel'])->name('order.shippingLabel');
+    Route::post('/order/{id}/request-pickup', [OrderController::class, 'requestBiteshipPickup'])->name('order.requestPickup');
+    Route::post('/order/sync-shipping', [OrderController::class, 'syncAllShippedOrders'])->name('order.syncShipping');
     Route::get('/order/{id}/check-midtrans', [OrderController::class, 'checkMidtransStatus'])->name('order.checkMidtrans');
     Route::put('/order/{id}/status', [OrderController::class, 'updateStatus'])->name('order.updateStatus');
     Route::resource('order', OrderController::class);

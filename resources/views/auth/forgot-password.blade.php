@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Lupa Password | Kelompok 3 Fashion Store</title>
-    <link rel="icon" type="image/png" href="{{ asset('frontend-assets/images/icons/favicon.png') }}">
+    <link rel="icon" type="image/png" href="{{ store_favicon_url() }}">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700&display=swap">
     <link rel="stylesheet" href="/assets/plugins/fontawesome-free/css/all.min.css">
     <link rel="stylesheet" href="/assets/dist/css/adminlte.min.css">

@@ -97,12 +97,33 @@ class RajaOngkirService
     }
 
     /**
+     * Normalisasi nama ekspedisi menjadi kode kurir resmi RajaOngkir (misal: "J&T" -> "jnt").
+     */
+    public static function normalizeCourierCode(?string $courier): string
+    {
+        $c = strtolower(trim((string) $courier));
+        $map = [
+            'j&t' => 'jnt',
+            'j&t express' => 'jnt',
+            'jne express' => 'jne',
+            'sicepat express' => 'sicepat',
+            'pos indonesia' => 'pos',
+            'ninja xpress' => 'ninja',
+            'lion parcel' => 'lion',
+            'id express' => 'ide',
+            'sap express' => 'sap',
+        ];
+
+        return $map[$c] ?? preg_replace('/[^a-z]/', '', $c);
+    }
+
+    /**
      * Lacak nomor resi (waybill) via RajaOngkir Komerce. Null jika gagal / tidak tersedia.
      */
     public static function trackWaybill(string $awb, string $courierCode): ?array
     {
         $awb = trim($awb);
-        $courierCode = strtolower(trim($courierCode));
+        $courierCode = self::normalizeCourierCode($courierCode);
         $apiKey = config('rajaongkir.api_key');
 
         if ($awb === '' || $courierCode === '' || empty($apiKey)) {
@@ -111,7 +132,7 @@ class RajaOngkirService
 
         $cacheKey = 'rajaongkir_waybill_' . md5($awb . '|' . $courierCode);
 
-        return Cache::remember($cacheKey, now()->addMinutes(15), function () use ($awb, $courierCode, $apiKey) {
+        return Cache::remember($cacheKey, now()->addMinutes(60), function () use ($awb, $courierCode, $apiKey) {
             $baseUrl = rtrim(config('rajaongkir.base_url', 'https://rajaongkir.komerce.id/api/v1'), '/');
             try {
                 $response = Http::withoutVerifying()

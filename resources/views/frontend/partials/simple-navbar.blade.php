@@ -102,8 +102,8 @@
 		<div class="wrap-menu-desktop how-shadow1">
 			<nav class="limiter-menu-desktop container">
 				<!-- Logo desktop -->
-				<a href="/" class="logo">
-					<img src="{{ asset('frontend-assets/images/icons/logo-01.png') }}" alt="IMG-LOGO">
+				<a href="/" class="logo" style="display: inline-flex; align-items: center; text-decoration: none;">
+					@include('frontend.partials.brand-logo', ['maxHeight' => '38px', 'fontSize' => '1.25rem'])
 				</a>
 
 				<!-- Menu desktop -->
@@ -189,7 +189,9 @@
 	<!-- Header Mobile -->
 	<div class="wrap-header-mobile">
 		<div class="logo-mobile">
-			<a href="/"><img src="{{ asset('frontend-assets/images/icons/logo-01.png') }}" alt="IMG-LOGO"></a>
+			<a href="/" style="display: inline-flex; align-items: center; text-decoration: none;">
+				@include('frontend.partials.brand-logo', ['maxHeight' => '30px', 'fontSize' => '1.05rem'])
+			</a>
 		</div>
 		<div class="btn-show-menu-mobile hamburger hamburger--squeeze" onclick="var m = document.querySelector('.menu-mobile'); if(m){ m.style.display = (m.style.display === 'block' ? 'none' : 'block'); }">
 			<span class="hamburger-box">

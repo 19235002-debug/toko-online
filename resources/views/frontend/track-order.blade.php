@@ -6,7 +6,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="csrf-token" content="{{ csrf_token() }}">
 <!--===============================================================================================-->	
-	<link rel="icon" type="image/png" href="{{ asset('frontend-assets/images/icons/favicon.png') }}"/>
+	<link rel="icon" type="image/png" href="{{ store_favicon_url() }}"/>
 <!--===============================================================================================-->
 	<link rel="stylesheet" type="text/css" href="{{ asset('frontend-assets/vendor/bootstrap/css/bootstrap.min.css') }}">
 <!--===============================================================================================-->

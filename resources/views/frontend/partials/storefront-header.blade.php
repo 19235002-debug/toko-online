@@ -5,8 +5,8 @@
 			<div class="wrap-menu-desktop">
 				<nav class="limiter-menu-desktop container">
 					<!-- Logo desktop -->
-					<a href="/" class="logo">
-						<img src="{{ asset('frontend-assets/images/icons/logo-01.png') }}" alt="IMG-LOGO">
+					<a href="/" class="logo" style="display: inline-flex; align-items: center; text-decoration: none;">
+						@include('frontend.partials.brand-logo', ['maxHeight' => '38px', 'fontSize' => '1.25rem'])
 					</a>
 
 					<!-- Menu desktop -->
@@ -115,7 +115,9 @@
 		<!-- Header Mobile -->
 		<div class="wrap-header-mobile">
 			<div class="logo-mobile">
-				<a href="/"><img src="{{ asset('frontend-assets/images/icons/logo-01.png') }}" alt="IMG-LOGO"></a>
+				<a href="/" style="display: inline-flex; align-items: center; text-decoration: none;">
+					@include('frontend.partials.brand-logo', ['maxHeight' => '30px', 'fontSize' => '1.05rem'])
+				</a>
 			</div>
 
 			<div class="wrap-icon-header flex-w flex-r-m m-r-15">
@@ -190,7 +192,7 @@
 			<ul class="topbar-mobile">
 				<li>
 					<div class="left-top-bar">
-						Ongkir Real-Time RajaOngkir &amp; Pembayaran Midtrans
+						Ongkir Real-Time &amp; Resi Otomatis Biteship &bull; Midtrans Snap
 					</div>
 				</li>
 				<li>

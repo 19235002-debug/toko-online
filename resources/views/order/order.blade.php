@@ -66,7 +66,21 @@
                     <h3 class="card-title font-weight-bold">
                         <i class="fa-solid fa-list-check mr-1 text-primary"></i> Daftar Transaksi Toko
                     </h3>
-                    <div class="card-tools">
+                    <div class="card-tools d-flex flex-wrap align-items-center" style="gap: 8px;">
+                        <span class="badge rounded-pill px-3 py-1.5 d-inline-flex align-items-center" style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; font-size: 12px; gap: 6px;">
+                            <i class="fa fa-wallet"></i> Saldo Biteship: <strong>{{ $biteshipWallet['formatted'] ?? 'Rp 250.000' }}</strong>
+                            @if(!empty($biteshipWallet['is_demo']))
+                                <span class="badge badge-light border text-muted" style="font-size: 9.5px;">Sandbox</span>
+                            @endif
+                        </span>
+                        @if(($counts['dikirim'] ?? 0) > 0)
+                        <form action="{{ route('order.syncShipping') }}" method="POST" class="d-inline">
+                            @csrf
+                            <button type="submit" class="btn btn-outline-primary btn-sm btn-action" title="Cek status resi ekspedisi via Biteship">
+                                <i class="fa-solid fa-truck-fast mr-1"></i> Sinkron Resi Biteship
+                            </button>
+                        </form>
+                        @endif
                         <a href="{{ route('order.index') }}" class="btn btn-light border btn-sm btn-action" style="gap: 5px;">
                             <i class="fa-solid fa-arrows-rotate"></i> <span>Reset Filter</span>
                         </a>
@@ -178,6 +192,18 @@
                                             <a href="{{ route('order.show', $data->id_order) }}" class="btn btn-info btn-sm btn-action text-white" style="gap: 5px;" title="Lihat Detail Pesanan">
                                                 <i class="fa-solid fa-eye"></i> <span>Detail</span>
                                             </a>
+                                            @if($data->no_resi)
+                                                <a href="{{ route('order.shippingLabel', $data->id_order) }}" target="_blank" class="btn btn-dark btn-sm btn-action" title="Cetak Label Resi">
+                                                    <i class="fa-solid fa-barcode"></i>
+                                                </a>
+                                            @elseif(in_array($data->status, ['diproses', 'pending']))
+                                                <form action="{{ route('order.requestPickup', $data->id_order) }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-warning btn-sm btn-action" title="Request Pick-up Kurir (Biteship)">
+                                                        <i class="fa-solid fa-truck-pickup"></i>
+                                                    </button>
+                                                </form>
+                                            @endif
                                             <a href="{{ route('order.print', $data->id_order) }}" target="_blank" class="btn btn-success btn-sm btn-action" title="Cetak Invoice">
                                                 <i class="fa-solid fa-print"></i>
                                             </a>

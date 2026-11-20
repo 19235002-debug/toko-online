@@ -37,3 +37,6 @@ Route::get('/barang', function () {
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+// Biteship Real-time Webhook Receiver
+Route::post('/biteship/webhook', [\App\Http\Controllers\OrderController::class, 'biteshipWebhook']);
