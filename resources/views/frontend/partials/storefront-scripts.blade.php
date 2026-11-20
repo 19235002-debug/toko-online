@@ -551,9 +551,14 @@
 
 		function reopenReceiptSnap() {
 			var res = window.lastCheckoutRes;
-			if (!res || !res.snap_token || typeof window.snap === 'undefined') return;
-			$('#modalOrderReceipt').modal('hide');
-			openSnapPayment(res);
+			if (!res || !res.snap_token) return;
+			$('.modal').modal('hide');
+			$('.modal-backdrop').remove();
+			$('body').removeClass('modal-open').css('padding-right', '');
+			$('#snap-midtrans, #snap-container').remove();
+			setTimeout(function() {
+				openSnapPayment(res);
+			}, 250);
 		}
 
 		function openSwitchPaymentModal() {
@@ -586,7 +591,7 @@
 				swal.close();
 				if (!resp || !resp.success) {
 					swal("Gagal", resp.message || "Gagal mengubah metode pembayaran.", "error");
-					$('#modalOrderReceipt').modal('show');
+					showModernOrderReceipt(res, 'pending');
 					return;
 				}
 
@@ -597,53 +602,85 @@
 				} else if (resp.mode === 'online') {
 					res.snap_token = resp.snap_token;
 					res.metode_pembayaran = 'midtrans';
-					showModernOrderReceipt(res, 'pending');
-					if (typeof window.snap !== 'undefined' && resp.snap_token) {
-						$('#modalOrderReceipt').modal('hide');
+					window.lastCheckoutRes = res;
+
+					$('.modal').modal('hide');
+					$('.modal-backdrop').remove();
+					$('body').removeClass('modal-open').css('padding-right', '');
+					$('#snap-midtrans, #snap-container').remove();
+
+					setTimeout(function() {
 						openSnapPayment(res);
-					}
+					}, 250);
 				}
 			}).fail(function(xhr) {
 				swal.close();
 				var err = xhr.responseJSON ? xhr.responseJSON.message : "Terjadi kesalahan pada server.";
 				swal("Gagal", err, "error");
-				$('#modalOrderReceipt').modal('show');
+				showModernOrderReceipt(res, 'pending');
 			});
 		}
 
 		function openSnapPayment(res) {
-			startSnapLivePolling(res);
-			window.snap.pay(res.snap_token, {
-				onSuccess: function(result) {
-					stopReceiptPolling();
-					$.post('/midtrans/sync/' + res.kode_order, { _token: '{{ csrf_token() }}' });
-					showModernOrderReceipt(res, 'paid');
-				},
-				onPending: function(result) {
-					// Tunggu sinkronisasi selesai sebelum menentukan status modal
-					$.post('/midtrans/sync/' + res.kode_order, { _token: '{{ csrf_token() }}' }, function(syncRes) {
-						showModernOrderReceipt(res, (syncRes && syncRes.status === 'diproses') ? 'paid' : 'pending');
-					}).fail(function() {
-						showModernOrderReceipt(res, 'pending');
-					});
-				},
-				onError: function(result) {
-					stopReceiptPolling();
-					swal({
-						title: "Pembayaran Gagal",
-						text: "Pembayaran untuk pesanan " + res.kode_order + " gagal diproses.",
-						icon: "error"
-					});
-				},
-				onClose: function() {
-					// Jika sudah terbayar di simulator/mobile banking, langsung tampilkan sukses
-					$.post('/midtrans/sync/' + res.kode_order, { _token: '{{ csrf_token() }}' }, function(syncRes) {
-						showModernOrderReceipt(res, (syncRes && syncRes.status === 'diproses') ? 'paid' : 'pending');
-					}).fail(function() {
-						showModernOrderReceipt(res, 'pending');
-					});
+			if (!res || !res.snap_token) {
+				swal("Pemberitahuan", "Token pembayaran tidak valid.", "error");
+				showModernOrderReceipt(res, 'pending');
+				return;
+			}
+			if (typeof window.snap === 'undefined') {
+				swal("Memuat Modul...", "Modul pembayaran sedang dimuat, silakan coba sesaat lagi.", "info");
+				showModernOrderReceipt(res, 'pending');
+				return;
+			}
+
+			// Bersihkan iframe lama bila ada agar Snap memunculkan tampilan pemilihan channel baru
+			try {
+				if (window.snap && typeof window.snap.hide === 'function') {
+					window.snap.hide();
 				}
-			});
+			} catch (e) {}
+			$('#snap-midtrans, #snap-container').remove();
+
+			startSnapLivePolling(res);
+
+			try {
+				window.snap.pay(res.snap_token, {
+					onSuccess: function(result) {
+						stopReceiptPolling();
+						$.post('/midtrans/sync/' + res.kode_order, { _token: '{{ csrf_token() }}' });
+						showModernOrderReceipt(res, 'paid');
+					},
+					onPending: function(result) {
+						// Tunggu sinkronisasi selesai sebelum menentukan status modal
+						$.post('/midtrans/sync/' + res.kode_order, { _token: '{{ csrf_token() }}' }, function(syncRes) {
+							showModernOrderReceipt(res, (syncRes && syncRes.status === 'diproses') ? 'paid' : 'pending');
+						}).fail(function() {
+							showModernOrderReceipt(res, 'pending');
+						});
+					},
+					onError: function(result) {
+						stopReceiptPolling();
+						swal({
+							title: "Pembayaran Gagal",
+							text: "Pembayaran untuk pesanan " + res.kode_order + " gagal diproses.",
+							icon: "error"
+						});
+						showModernOrderReceipt(res, 'pending');
+					},
+					onClose: function() {
+						// Jika sudah terbayar di simulator/mobile banking, langsung tampilkan sukses
+						$.post('/midtrans/sync/' + res.kode_order, { _token: '{{ csrf_token() }}' }, function(syncRes) {
+							showModernOrderReceipt(res, (syncRes && syncRes.status === 'diproses') ? 'paid' : 'pending');
+						}).fail(function() {
+							showModernOrderReceipt(res, 'pending');
+						});
+					}
+				});
+			} catch (err) {
+				console.error('Snap pay error:', err);
+				showModernOrderReceipt(res, 'pending');
+				swal("Gagal Membuka Pembayaran", "Tidak dapat membuka popup pembayaran: " + (err.message || err), "error");
+			}
 		}
 
 		function showModernOrderReceipt(res, state) {
@@ -766,7 +803,13 @@
 
 						if (res.metode_pembayaran === 'midtrans' && res.snap_token && typeof window.snap !== 'undefined') {
 							window.lastCheckoutRes = res;
-							openSnapPayment(res);
+							$('.modal').modal('hide');
+							$('.modal-backdrop').remove();
+							$('body').removeClass('modal-open').css('padding-right', '');
+							$('#snap-midtrans, #snap-container').remove();
+							setTimeout(function() {
+								openSnapPayment(res);
+							}, 250);
 						} else {
 							showModernOrderReceipt(res, 'cod');
 						}

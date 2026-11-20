@@ -964,31 +964,44 @@
 		@endif
 
 		function payWithSnap(snapToken, kodeOrder) {
+			if (!snapToken) return;
 			if (typeof window.snap === 'undefined') {
 				alert('Modul pembayaran sedang dimuat, silakan coba sesaat lagi.');
 				return;
 			}
 
-			window.snap.pay(snapToken, {
-				onSuccess: function(result) {
-					$.post('/midtrans/sync/' + kodeOrder, { _token: '{{ csrf_token() }}' }, function() {
-						location.reload();
-					});
-				},
-				onPending: function(result) {
-					$.post('/midtrans/sync/' + kodeOrder, { _token: '{{ csrf_token() }}' }, function() {
-						location.reload();
-					});
-				},
-				onError: function(result) {
-					swal("Pembayaran Gagal", "Pembayaran gagal diproses.", "error");
-				},
-				onClose: function() {
-					$.post('/midtrans/sync/' + kodeOrder, { _token: '{{ csrf_token() }}' }, function() {
-						location.reload();
-					});
+			try {
+				if (window.snap && typeof window.snap.hide === 'function') {
+					window.snap.hide();
 				}
-			});
+			} catch (e) {}
+			$('#snap-midtrans, #snap-container').remove();
+
+			try {
+				window.snap.pay(snapToken, {
+					onSuccess: function(result) {
+						$.post('/midtrans/sync/' + kodeOrder, { _token: '{{ csrf_token() }}' }, function() {
+							location.reload();
+						});
+					},
+					onPending: function(result) {
+						$.post('/midtrans/sync/' + kodeOrder, { _token: '{{ csrf_token() }}' }, function() {
+							location.reload();
+						});
+					},
+					onError: function(result) {
+						swal("Pembayaran Gagal", "Pembayaran gagal diproses.", "error");
+					},
+					onClose: function() {
+						$.post('/midtrans/sync/' + kodeOrder, { _token: '{{ csrf_token() }}' }, function() {
+							location.reload();
+						});
+					}
+				});
+			} catch (err) {
+				console.error('Snap pay error:', err);
+				swal("Gagal Membuka Pembayaran", "Tidak dapat membuka modul pembayaran: " + (err.message || err), "error");
+			}
 		}
 
 		function promptTrackSwitchPayment(kodeOrder) {
@@ -1033,7 +1046,10 @@
 								location.reload();
 							});
 						} else if (resp.mode === 'online' && resp.snap_token) {
-							payWithSnap(resp.snap_token, kodeOrder);
+							$('#snap-midtrans, #snap-container').remove();
+							setTimeout(function() {
+								payWithSnap(resp.snap_token, kodeOrder);
+							}, 250);
 						}
 					} else {
 						swal("Gagal", resp.message || "Gagal mengubah metode pembayaran.", "error");

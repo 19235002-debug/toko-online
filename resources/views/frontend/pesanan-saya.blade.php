@@ -453,20 +453,32 @@
 
 		function paySnap(snapToken, kodeOrder) {
 			if (!snapToken) return;
-			snap.pay(snapToken, {
-				onSuccess: function(result) {
-					syncAndReload(kodeOrder);
-				},
-				onPending: function(result) {
-					syncAndReload(kodeOrder);
-				},
-				onError: function(result) {
-					Swal.fire("Pembayaran Gagal", "Silakan coba metode pembayaran lain.", "error");
-				},
-				onClose: function() {
-					syncAndReload(kodeOrder);
+			try {
+				if (window.snap && typeof window.snap.hide === 'function') {
+					window.snap.hide();
 				}
-			});
+			} catch (e) {}
+			$('#snap-midtrans, #snap-container').remove();
+
+			try {
+				snap.pay(snapToken, {
+					onSuccess: function(result) {
+						syncAndReload(kodeOrder);
+					},
+					onPending: function(result) {
+						syncAndReload(kodeOrder);
+					},
+					onError: function(result) {
+						Swal.fire("Pembayaran Gagal", "Silakan coba metode pembayaran lain.", "error");
+					},
+					onClose: function() {
+						syncAndReload(kodeOrder);
+					}
+				});
+			} catch (err) {
+				console.error('Snap error:', err);
+				Swal.fire("Gagal Membuka Pembayaran", "Tidak dapat membuka modul pembayaran.", "error");
+			}
 		}
 
 		function syncAndReload(kodeOrder) {
