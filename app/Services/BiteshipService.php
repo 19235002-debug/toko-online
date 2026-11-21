@@ -450,37 +450,39 @@ class BiteshipService
      */
     public static function getAccountBalance(): array
     {
-        $apiKey = self::apiKey();
+        return Cache::remember('biteship_wallet_balance', 300, function () {
+            $apiKey = self::apiKey();
 
-        if (!empty($apiKey)) {
-            try {
-                $response = Http::withoutVerifying()
-                    ->withHeaders([
-                        'Authorization' => 'Bearer ' . $apiKey,
-                        'Accept' => 'application/json',
-                    ])
-                    ->timeout(5)
-                    ->get(self::baseUrl() . '/v1/accounts/me');
+            if (!empty($apiKey)) {
+                try {
+                    $response = Http::withoutVerifying()
+                        ->withHeaders([
+                            'Authorization' => 'Bearer ' . $apiKey,
+                            'Accept' => 'application/json',
+                        ])
+                        ->timeout(2)
+                        ->get(self::baseUrl() . '/v1/accounts/me');
 
-                if ($response->successful()) {
-                    $balance = (int) ($response->json('account.wallet.amount') ?? $response->json('wallet.amount') ?? 0);
-                    return [
-                        'balance' => $balance,
-                        'formatted' => 'Rp ' . number_format($balance, 0, ',', '.'),
-                        'is_demo' => false,
-                    ];
+                    if ($response->successful()) {
+                        $balance = (int) ($response->json('account.wallet.amount') ?? $response->json('wallet.amount') ?? 0);
+                        return [
+                            'balance' => $balance,
+                            'formatted' => 'Rp ' . number_format($balance, 0, ',', '.'),
+                            'is_demo' => false,
+                        ];
+                    }
+                } catch (\Throwable $e) {
+                    Log::warning('Biteship getAccountBalance error: ' . $e->getMessage());
                 }
-            } catch (\Throwable $e) {
-                Log::warning('Biteship getAccountBalance error: ' . $e->getMessage());
             }
-        }
 
-        // Demo Sandbox balance
-        return [
-            'balance' => 250000,
-            'formatted' => 'Rp 250.000',
-            'is_demo' => true,
-        ];
+            // Demo Sandbox balance
+            return [
+                'balance' => 250000,
+                'formatted' => 'Rp 250.000',
+                'is_demo' => true,
+            ];
+        });
     }
 
     /**

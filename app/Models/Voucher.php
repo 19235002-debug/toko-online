@@ -36,6 +36,16 @@ class Voucher extends Model
         'tanggal_selesai' => 'date',
     ];
 
+    protected static function booted()
+    {
+        static::saved(function () {
+            \Illuminate\Support\Facades\Cache::forget('frontend_active_vouchers');
+        });
+        static::deleted(function () {
+            \Illuminate\Support\Facades\Cache::forget('frontend_active_vouchers');
+        });
+    }
+
     /**
      * Hitung nominal potongan diskon untuk subtotal belanja tertentu.
      */

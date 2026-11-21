@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 
 class Setting extends Model
 {
@@ -12,6 +13,24 @@ class Setting extends Model
     protected $table = 'settings';
     protected $primaryKey = 'id_setting';
     protected $guarded = ['id_setting'];
+
+    protected static ?Setting $staticCache = null;
+
+    protected static function booted()
+    {
+        static::saved(function () {
+            self::clearStaticCache();
+        });
+        static::deleted(function () {
+            self::clearStaticCache();
+        });
+    }
+
+    public static function clearStaticCache(): void
+    {
+        static::$staticCache = null;
+        Cache::forget('store_settings_singleton');
+    }
 
     protected $casts = [
         'active_couriers' => 'array',
@@ -103,26 +122,34 @@ class Setting extends Model
     ];
 
     /**
-     * Dapatkan satu baris setting aktif.
+     * Dapatkan satu baris setting aktif (dengan cache in-memory & Laravel Cache agar query tidak berulang).
      */
     public static function getSettings()
     {
-        return self::firstOrCreate(
-            ['id_setting' => 1],
-            [
-                'nama_toko' => 'Coza Store',
-                'no_whatsapp' => '081234567890',
-                'email_toko' => 'admin@cozastore.com',
-                'alamat_toko' => 'Jl. Jendral Sudirman No. 123, Jakarta Pusat',
-                'rekening_bank' => "BCA: 1234567890 a.n Toko Coza\nMandiri: 9876543210 a.n Toko Coza",
-                'deskripsi_toko' => 'Toko online busana dan aksesoris modern dengan produk berkualitas tinggi.',
-                'ongkir_reguler' => 15000,
-                'ongkir_express' => 30000,
-                'min_gratis_ongkir' => 300000,
-                'active_couriers' => ['jne', 'jnt', 'sicepat', 'anteraja', 'pos'],
-                'active_payment_methods' => ['midtrans', 'cod'],
-            ]
-        );
+        if (static::$staticCache !== null) {
+            return static::$staticCache;
+        }
+
+        static::$staticCache = Cache::remember('store_settings_singleton', 3600, function () {
+            return self::firstOrCreate(
+                ['id_setting' => 1],
+                [
+                    'nama_toko' => 'Coza Store',
+                    'no_whatsapp' => '081234567890',
+                    'email_toko' => 'admin@cozastore.com',
+                    'alamat_toko' => 'Jl. Jendral Sudirman No. 123, Jakarta Pusat',
+                    'rekening_bank' => "BCA: 1234567890 a.n Toko Coza\nMandiri: 9876543210 a.n Toko Coza",
+                    'deskripsi_toko' => 'Toko online busana dan aksesoris modern dengan produk berkualitas tinggi.',
+                    'ongkir_reguler' => 15000,
+                    'ongkir_express' => 30000,
+                    'min_gratis_ongkir' => 300000,
+                    'active_couriers' => ['jne', 'jnt', 'sicepat', 'anteraja', 'pos'],
+                    'active_payment_methods' => ['midtrans', 'cod'],
+                ]
+            );
+        });
+
+        return static::$staticCache;
     }
 
     /**

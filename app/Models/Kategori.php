@@ -33,6 +33,14 @@ class Kategori extends Model
                 $model->slug = Str::slug($prefix . $model->nama_kategori);
             }
         });
+
+        static::saved(function () {
+            \Illuminate\Support\Facades\Cache::forget('frontend_main_kategoris');
+        });
+
+        static::deleted(function () {
+            \Illuminate\Support\Facades\Cache::forget('frontend_main_kategoris');
+        });
     }
 
     public function parent()

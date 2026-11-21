@@ -530,6 +530,8 @@
         updateJakartaClock();
     </script>
 
+    <!-- Instant.page for lightning fast admin page transitions (<50ms) -->
+    <script src="{{ asset('frontend-assets/vendor/instantpage/instantpage.min.js') }}" type="module"></script>
 </body>
 
 </html>

@@ -61,12 +61,10 @@ class AppServiceProvider extends ServiceProvider
             return "<?php echo \App\Helpers\ActionHelper::reset($expression); ?>";
         });
 
-        // Share store settings ke seluruh views
+        // Share store settings ke seluruh views (menggunakan cache singleton)
         try {
-            if (\Illuminate\Support\Facades\Schema::hasTable('settings')) {
-                \Illuminate\Support\Facades\View::share('storeSetting', \App\Models\Setting::getSettings());
-            }
-        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\View::share('storeSetting', \App\Models\Setting::getSettings());
+        } catch (\Throwable $e) {
             // Abaikan jika database belum terhubung
         }
     }

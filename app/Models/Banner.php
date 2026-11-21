@@ -14,5 +14,15 @@ class Banner extends Model
     protected $table = 'banners';
 
     protected $guarded = ['id_banner'];
+
+    protected static function booted()
+    {
+        static::saved(function () {
+            \Illuminate\Support\Facades\Cache::forget('frontend_active_banners');
+        });
+        static::deleted(function () {
+            \Illuminate\Support\Facades\Cache::forget('frontend_active_banners');
+        });
+    }
 }
 

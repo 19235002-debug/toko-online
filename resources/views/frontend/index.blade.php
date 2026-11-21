@@ -1,5 +1,5 @@
 @include('frontend.partials.storefront-head', ['pageTitle' => 'Coza Store | Kelompok 3'])
-<body class="animsition">
+<body>
 	@include('sweetalert::alert')
 	@include('frontend.partials.storefront-header')
 

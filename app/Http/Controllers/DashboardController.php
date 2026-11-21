@@ -8,14 +8,18 @@ use App\Models\User;
 use App\Models\Order;
 use App\Models\OrderItem;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        // Otomatis sinkronkan transaksi Midtrans yang masih pending agar ringkasan statistik akurat
-        OrderController::syncPendingMidtransOrders(10);
+        // Sinkronkan transaksi Midtrans pending (dithrottle 15 menit agar dashboard terbuka instan tanpa delay API)
+        if (!Cache::has('auto_sync_external_orders_throttle')) {
+            Cache::put('auto_sync_external_orders_throttle', true, now()->addMinutes(15));
+            OrderController::syncPendingMidtransOrders(5);
+        }
 
         $barang = Barang::count();
         $user = User::count();

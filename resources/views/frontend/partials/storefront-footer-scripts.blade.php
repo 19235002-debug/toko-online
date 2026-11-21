@@ -16,7 +16,6 @@
 	@endif
 
 	<script src="{{ asset('frontend-assets/vendor/jquery/jquery-3.2.1.min.js') }}"></script>
-	<script src="{{ asset('frontend-assets/vendor/animsition/js/animsition.min.js') }}"></script>
 	<script src="{{ asset('frontend-assets/vendor/bootstrap/js/popper.js') }}"></script>
 	<script src="{{ asset('frontend-assets/vendor/bootstrap/js/bootstrap.min.js') }}"></script>
 	<script src="{{ asset('frontend-assets/vendor/select2/select2.min.js') }}"></script>
@@ -197,6 +196,8 @@
 		});
 		@endif
 	</script>
+	<!-- Instant.page for lightning fast page transitions (<50ms) -->
+	<script src="{{ asset('frontend-assets/vendor/instantpage/instantpage.min.js') }}" type="module"></script>
 </body>
 </html>
 

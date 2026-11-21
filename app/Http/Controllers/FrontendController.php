@@ -50,13 +50,19 @@ class FrontendController extends Controller
         $totalProduk = (clone $query)->count();
         $barang = $query->with(['approvedReviews', 'gambars', 'variasis'])->orderBy('id_barang', 'desc')->take(8)->get();
         $promoProducts = Barang::with(['approvedReviews', 'gambars', 'variasis'])->promoActive()->orderBy('id_barang', 'desc')->take(4)->get();
-        $mainKategoris = Kategori::main()->with('children')->get();
+        $mainKategoris = \Illuminate\Support\Facades\Cache::remember('frontend_main_kategoris', 600, function () {
+            return Kategori::main()->with('children')->get();
+        });
         $categories = $mainKategoris->pluck('nama_kategori');
         if ($categories->isEmpty()) {
             $categories = Barang::select('kategori')->whereNotNull('kategori')->distinct()->pluck('kategori');
         }
-        $banners = Banner::where('status', true)->orderBy('urutan', 'asc')->orderBy('id_banner', 'desc')->get();
-        $vouchers = Voucher::aktifTersedia()->orderBy('id_voucher', 'desc')->get();
+        $banners = \Illuminate\Support\Facades\Cache::remember('frontend_active_banners', 600, function () {
+            return Banner::where('status', true)->orderBy('urutan', 'asc')->orderBy('id_banner', 'desc')->get();
+        });
+        $vouchers = \Illuminate\Support\Facades\Cache::remember('frontend_active_vouchers', 600, function () {
+            return Voucher::aktifTersedia()->orderBy('id_voucher', 'desc')->get();
+        });
 
         return view('frontend.index', compact('barang', 'promoProducts', 'categories', 'mainKategoris', 'banners', 'vouchers', 'totalProduk'));
     }
@@ -130,7 +136,9 @@ class FrontendController extends Controller
             ->paginate(12);
         $barang->withQueryString();
 
-        $mainKategoris = Kategori::main()->with('children')->get();
+        $mainKategoris = \Illuminate\Support\Facades\Cache::remember('frontend_main_kategoris', 600, function () {
+            return Kategori::main()->with('children')->get();
+        });
         $categories = $mainKategoris->pluck('nama_kategori');
         if ($categories->isEmpty()) {
             $categories = Barang::select('kategori')->whereNotNull('kategori')->distinct()->pluck('kategori');
@@ -139,7 +147,9 @@ class FrontendController extends Controller
             ->groupBy('kategori')
             ->pluck('total', 'kategori');
         $allProductsCount = Barang::count();
-        $vouchers = Voucher::aktifTersedia()->orderBy('id_voucher', 'desc')->get();
+        $vouchers = \Illuminate\Support\Facades\Cache::remember('frontend_active_vouchers', 600, function () {
+            return Voucher::aktifTersedia()->orderBy('id_voucher', 'desc')->get();
+        });
 
         return view('frontend.shop', compact(
             'barang',

@@ -12,6 +12,7 @@ use App\Services\BiteshipService;
 use App\Services\RajaOngkirService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use RealRashid\SweetAlert\Facades\Alert;
 use Exception;
 
@@ -25,9 +26,12 @@ class OrderController extends Controller
         // Batalkan pesanan belum dibayar yang melewati batas 3 hari
         self::cancelUnpaidOrders(3);
 
-        // Otomatis sinkronkan pesanan Midtrans pending & resi RajaOngkir yang sudah terkirim
-        self::syncPendingMidtransOrders(15);
-        self::syncShippedOrdersWithRajaOngkir(10);
+        // Throttle sinkronisasi otomatis Midtrans & Biteship/resi (15 menit) agar perpindahan halaman termuat instan (<50ms)
+        if (!Cache::has('auto_sync_external_orders_throttle')) {
+            Cache::put('auto_sync_external_orders_throttle', true, now()->addMinutes(15));
+            self::syncPendingMidtransOrders(5);
+            self::syncShippedOrdersWithRajaOngkir(5);
+        }
 
         $status = $request->query('status');
         $search = trim((string) $request->query('search', ''));
