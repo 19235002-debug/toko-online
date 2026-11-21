@@ -175,6 +175,92 @@ class PasswordResetAndAdminOrderTest extends TestCase
         });
     }
 
+    public function test_admin_order_prioritizes_unfulfilled_and_unpaid_orders_first(): void
+    {
+        $admin = User::create([
+            'nama' => 'Admin Priority Test',
+            'username' => 'admin_priority_' . uniqid(),
+            'email' => 'admin_priority_' . uniqid() . '@example.com',
+            'password' => Hash::make('password123'),
+            'role' => 'admin',
+        ]);
+
+        $prefix = 'ORD-PRIO-' . rand(100, 999) . '-';
+
+        $orderSelesai = Order::create([
+            'kode_order' => $prefix . 'SELESAI',
+            'nama_customer' => 'Customer Selesai',
+            'no_hp' => '081200000001',
+            'alamat' => 'Alamat Selesai',
+            'metode_pembayaran' => 'midtrans',
+            'total_harga' => 100000,
+            'ongkir' => 10000,
+            'status' => 'selesai',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $orderDikirim = Order::create([
+            'kode_order' => $prefix . 'DIKIRIM',
+            'nama_customer' => 'Customer Dikirim',
+            'no_hp' => '081200000002',
+            'alamat' => 'Alamat Dikirim',
+            'metode_pembayaran' => 'midtrans',
+            'total_harga' => 100000,
+            'ongkir' => 10000,
+            'status' => 'dikirim',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $orderPending = Order::create([
+            'kode_order' => $prefix . 'PENDING',
+            'nama_customer' => 'Customer Belum Bayar',
+            'no_hp' => '081200000003',
+            'alamat' => 'Alamat Pending',
+            'metode_pembayaran' => 'midtrans',
+            'total_harga' => 100000,
+            'ongkir' => 10000,
+            'status' => 'pending',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $orderDiproses = Order::create([
+            'kode_order' => $prefix . 'DIPROSES',
+            'nama_customer' => 'Customer Belum Dikirim',
+            'no_hp' => '081200000004',
+            'alamat' => 'Alamat Diproses',
+            'metode_pembayaran' => 'midtrans',
+            'total_harga' => 100000,
+            'ongkir' => 10000,
+            'status' => 'diproses',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $res = $this->actingAs($admin)->get('/order?search=' . urlencode($prefix));
+        $res->assertStatus(200);
+
+        $res->assertViewHas('orders', function ($orders) use ($orderDiproses, $orderPending, $orderDikirim, $orderSelesai) {
+            $codes = $orders->pluck('kode_order')->values()->all();
+            $posDiproses = array_search($orderDiproses->kode_order, $codes, true);
+            $posPending  = array_search($orderPending->kode_order, $codes, true);
+            $posDikirim  = array_search($orderDikirim->kode_order, $codes, true);
+            $posSelesai  = array_search($orderSelesai->kode_order, $codes, true);
+
+            // Verifikasi status 'diproses' (belum kirim) & 'pending' (belum bayar) tampil lebih dulu dari 'dikirim' & 'selesai'
+            return $posDiproses !== false
+                && $posPending !== false
+                && $posDikirim !== false
+                && $posSelesai !== false
+                && $posDiproses < $posDikirim
+                && $posDiproses < $posSelesai
+                && $posPending < $posDikirim
+                && $posPending < $posSelesai;
+        });
+    }
+
     public function test_image_compressor_stores_compressed_jpg(): void
     {
         Storage::fake('public');

@@ -117,7 +117,7 @@
                     [
                         'key' => 'all',
                         'label' => 'Semua Status',
-                        'sub' => 'Total Periode Ini',
+                        'sub' => 'Prioritas: Belum Kirim/Bayar',
                         'count' => $counts['all'],
                         'icon' => 'fa-solid fa-layer-group',
                         'iconBg' => '#eef2ff',
@@ -126,26 +126,26 @@
                         'activeBg' => '#f8faff',
                     ],
                     [
-                        'key' => 'pending',
-                        'label' => 'Menunggu Bayar',
-                        'sub' => 'Pending Midtrans/COD',
-                        'count' => $counts['pending'],
-                        'icon' => 'fa-solid fa-clock-rotate-left',
-                        'iconBg' => '#fffbeb',
-                        'iconColor' => '#d97706',
-                        'activeBorder' => '#f59e0b',
-                        'activeBg' => '#fffdfa',
-                    ],
-                    [
                         'key' => 'diproses',
                         'label' => 'Siap Dikemas',
-                        'sub' => 'Perlu Request Pick-up',
+                        'sub' => 'Belum Dikirim (Prioritas 1)',
                         'count' => $counts['diproses'],
                         'icon' => 'fa-solid fa-box-open',
                         'iconBg' => '#e0f2fe',
                         'iconColor' => '#0284c7',
                         'activeBorder' => '#0284c7',
                         'activeBg' => '#f0f9ff',
+                    ],
+                    [
+                        'key' => 'pending',
+                        'label' => 'Menunggu Bayar',
+                        'sub' => 'Belum Lunas (Prioritas 2)',
+                        'count' => $counts['pending'],
+                        'icon' => 'fa-solid fa-clock-rotate-left',
+                        'iconBg' => '#fffbeb',
+                        'iconColor' => '#d97706',
+                        'activeBorder' => '#f59e0b',
+                        'activeBg' => '#fffdfa',
                     ],
                     [
                         'key' => 'dikirim',
@@ -224,12 +224,17 @@
                             <i class="fa-solid fa-list-check" style="font-size: 16px;"></i>
                         </span>
                         <div>
-                            <h5 class="card-title font-weight-bold text-dark mb-0" style="font-size: 16px;">
-                                Daftar Transaksi Toko
-                            </h5>
-                            <span class="badge badge-light border text-muted px-2 py-0.5 ml-1" style="font-size: 11px;">
-                                {{ count($orders) }} pesanan ditemukan
-                            </span>
+                            <div class="d-flex align-items-center flex-wrap" style="gap: 6px;">
+                                <h5 class="card-title font-weight-bold text-dark mb-0" style="font-size: 16px;">
+                                    Daftar Transaksi Toko
+                                </h5>
+                                <span class="badge badge-light border text-muted px-2 py-0.5" style="font-size: 11px;">
+                                    {{ count($orders) }} pesanan
+                                </span>
+                                <span class="badge badge-warning text-dark border px-2 py-0.5 rounded-pill" style="font-size: 10.5px; font-weight: 600;" title="Sistem memprioritaskan pesanan belum dikirim & belum bayar tampil di urutan paling atas">
+                                    <i class="fa-solid fa-arrow-down-short-wide text-warning mr-1"></i> Prioritas: Belum Dikirim &amp; Belum Bayar
+                                </span>
+                            </div>
                         </div>
                     </div>
 
@@ -437,11 +442,21 @@
                                                   style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a; font-size: 11.5px; gap: 5px;">
                                                 <i class="fa-solid fa-clock"></i> Pending
                                             </span>
+                                            <div class="mt-1">
+                                                <span class="badge badge-warning text-dark px-2 py-0.5 rounded-pill" style="font-size: 9.5px; font-weight: 600;">
+                                                    <i class="fa-solid fa-circle-exclamation mr-1"></i> Belum Bayar
+                                                </span>
+                                            </div>
                                         @elseif($data->status == 'diproses')
                                             <span class="badge rounded-pill px-3 py-1.5 font-weight-bold d-inline-flex align-items-center"
                                                   style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-size: 11.5px; gap: 5px;">
                                                 <i class="fa-solid fa-box-open"></i> Diproses
                                             </span>
+                                            <div class="mt-1">
+                                                <span class="badge badge-primary text-white px-2 py-0.5 rounded-pill" style="font-size: 9.5px; font-weight: 600;">
+                                                    <i class="fa-solid fa-bolt mr-1"></i> Belum Dikirim
+                                                </span>
+                                            </div>
                                         @elseif($data->status == 'dikirim')
                                             <span class="badge rounded-pill px-3 py-1.5 font-weight-bold d-inline-flex align-items-center"
                                                   style="background: #ede9fe; color: #6d28d9; border: 1px solid #ddd6fe; font-size: 11.5px; gap: 5px;">

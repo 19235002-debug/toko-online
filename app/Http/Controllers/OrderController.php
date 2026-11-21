@@ -67,14 +67,22 @@ class OrderController extends Controller
             }
         }
 
-        $query = Order::with('items')->orderBy('id_order', 'desc');
+        $query = Order::with('items');
 
         if ($dateRange) {
             $query->whereBetween('created_at', $dateRange);
         }
 
         if ($status && $status !== 'all') {
-            $query->where('status', $status);
+            if ($status === 'perlu_tindakan' || $status === 'unfulfilled') {
+                $query->whereIn('status', ['diproses', 'pending']);
+            } elseif ($status === 'belum_kirim') {
+                $query->where('status', 'diproses');
+            } elseif ($status === 'belum_bayar') {
+                $query->where('status', 'pending');
+            } else {
+                $query->where('status', $status);
+            }
         }
 
         if ($metode && $metode !== 'all') {
@@ -88,6 +96,24 @@ class OrderController extends Controller
                   ->orWhere('no_hp', 'like', "%{$search}%");
             });
         }
+
+        // Prioritas Tampilan Utama:
+        // 1. 'diproses' (Barang siap dikemas & belum dikirim - prioritas operasional packing/kirim)
+        // 2. 'pending' (Pesanan belum dibayar customer - prioritas monitoring pembayaran)
+        // 3. 'dikirim' (Pesanan sedang dalam perjalanan kurir)
+        // 4. 'selesai' (Pesanan telah diterima customer)
+        // 5. 'dibatalkan' (Pesanan dibatalkan / kedaluwarsa)
+        // Dalam setiap kelompok status, pesanan diurutkan dari yang terbaru (id_order DESC)
+        $query->orderByRaw("
+            CASE 
+                WHEN status = 'diproses' THEN 1
+                WHEN status = 'pending' THEN 2
+                WHEN status = 'dikirim' THEN 3
+                WHEN status = 'selesai' THEN 4
+                WHEN status = 'dibatalkan' THEN 5
+                ELSE 6
+            END ASC
+        ")->orderBy('id_order', 'desc');
 
         $orders = $query->get();
 
@@ -111,8 +137,9 @@ class OrderController extends Controller
 
         $counts = [
             'all' => (clone $baseStatusQuery)->count(),
-            'pending' => (clone $baseStatusQuery)->where('status', 'pending')->count(),
+            'perlu_tindakan' => (clone $baseStatusQuery)->whereIn('status', ['diproses', 'pending'])->count(),
             'diproses' => (clone $baseStatusQuery)->where('status', 'diproses')->count(),
+            'pending' => (clone $baseStatusQuery)->where('status', 'pending')->count(),
             'dikirim' => (clone $baseStatusQuery)->where('status', 'dikirim')->count(),
             'selesai' => (clone $baseStatusQuery)->where('status', 'selesai')->count(),
             'dibatalkan' => (clone $baseStatusQuery)->where('status', 'dibatalkan')->count(),
