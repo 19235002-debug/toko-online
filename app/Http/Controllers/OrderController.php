@@ -432,9 +432,19 @@ class OrderController extends Controller
         }
 
         if ($order->metode_pembayaran === 'midtrans' && !$order->paid_at) {
-            self::syncOrderStatusWithMidtrans($order);
-            $order->refresh();
-            if (!$order->paid_at) {
+            // Jika pesanan masih berstatus pending, cek dulu ke Midtrans apakah sudah lunas
+            if ($order->status === 'pending') {
+                self::syncOrderStatusWithMidtrans($order);
+                $order->refresh();
+            }
+
+            // Jika status pesanan sudah 'diproses' (atau admin telah memvalidasinya), tandai lunas otomatis
+            if (in_array($order->status, ['diproses', 'dikirim', 'selesai'], true)) {
+                if (!$order->paid_at) {
+                    $order->paid_at = now();
+                    $order->save();
+                }
+            } elseif (!$order->paid_at) {
                 Alert::warning('Belum Lunas', 'Pesanan belum dibayar melalui Midtrans. Menunggu pembayaran pembeli.');
                 return redirect()->back();
             }

@@ -262,8 +262,8 @@ class BiteshipService
         $originPostal = (int) config('services.biteship.origin_postal_code', 12250);
         $originAreaId = (string) config('services.biteship.origin_area_id', 'IDNP6IDNC148IDND843IDZ12250');
 
-        $buyerName = (string) ($order->user->nama ?? 'Pelanggan ' . $order->kode_order);
-        $buyerPhone = (string) ($order->user->no_hp ?? '081234567890');
+        $buyerName = (string) ($order->nama_customer ?: ($order->user->nama ?? 'Pelanggan ' . $order->kode_order));
+        $buyerPhone = (string) ($order->no_hp ?: ($order->user->no_hp ?? '081234567890'));
         $buyerEmail = (string) ($order->user->email ?? 'buyer@toko.com');
         $buyerAddress = (string) ($order->alamat ?? 'Alamat Pelanggan');
         $destPostal = !empty($order->destination_postal_code) ? (int) $order->destination_postal_code : 12310;
