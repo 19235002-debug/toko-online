@@ -591,7 +591,7 @@ class FrontendController extends Controller
 
         $orders = $query->latest('id_order')
             ->paginate(10)
-            ->withQueryString();
+            ->appends($request->query());
 
         return view('frontend.pesanan-saya', compact('orders', 'user', 'counts', 'activeStatus'));
     }
