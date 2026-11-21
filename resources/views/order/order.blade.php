@@ -32,13 +32,92 @@
     <!-- Main content -->
     <div class="content">
         <div class="container-fluid">
+            <!-- Periode Pesanan & SOP Fulfillment Bar -->
+            <div class="card shadow-sm border-0 mb-3" style="border-radius: 16px; background: #ffffff;">
+                <div class="card-body p-3 d-flex flex-wrap align-items-center justify-content-between" style="gap: 12px;">
+                    <div class="d-flex flex-wrap align-items-center" style="gap: 8px;">
+                        <span class="text-muted font-weight-bold mr-1 d-none d-md-inline" style="font-size: 13px;">
+                            <i class="fa-regular fa-calendar-days mr-1 text-primary"></i> Periode:
+                        </span>
+                        @php
+                            $periodList = [
+                                'today' => [
+                                    'label' => 'Hari Ini',
+                                    'icon' => 'fa-solid fa-clock',
+                                    'count' => $periodCounts['today'] ?? 0,
+                                    'desc' => 'Prioritas Pengiriman Hari Ini'
+                                ],
+                                '2days' => [
+                                    'label' => '2 Hari Terakhir',
+                                    'icon' => 'fa-solid fa-truck-fast',
+                                    'count' => $periodCounts['2days'] ?? 0,
+                                    'desc' => 'Batas Maksimal Pengiriman Saat Ramai'
+                                ],
+                                'week' => [
+                                    'label' => '7 Hari',
+                                    'icon' => 'fa-regular fa-calendar',
+                                    'count' => $periodCounts['week'] ?? 0,
+                                    'desc' => 'Pesanan 1 Minggu Terakhir'
+                                ],
+                                'month' => [
+                                    'label' => 'Bulan Ini',
+                                    'icon' => 'fa-regular fa-calendar-check',
+                                    'count' => $periodCounts['month'] ?? 0,
+                                    'desc' => 'Pesanan Bulan Ini'
+                                ],
+                                'all' => [
+                                    'label' => 'Semua Waktu',
+                                    'icon' => 'fa-solid fa-database',
+                                    'count' => $periodCounts['all'] ?? 0,
+                                    'desc' => 'Seluruh Arsip Pesanan'
+                                ],
+                            ];
+                        @endphp
+                        @foreach($periodList as $pKey => $pData)
+                            @php
+                                $isPActive = ($periode === $pKey);
+                                $pUrl = route('order.index', array_filter([
+                                    'periode' => $pKey,
+                                    'status' => ($status && $status !== 'all') ? $status : null,
+                                    'metode' => ($metode && $metode !== 'all') ? $metode : null,
+                                    'search' => $search ?: null,
+                                ]));
+                            @endphp
+                            <a href="{{ $pUrl }}"
+                               class="btn btn-sm rounded-pill font-weight-bold px-3 py-1.5 transition-all {{ $isPActive ? 'btn-primary shadow-sm' : 'btn-light border text-secondary' }}"
+                               style="font-size: 12.5px; {{ $isPActive ? 'background: #4f46e5; border-color: #4f46e5; color: #fff;' : '' }}"
+                               title="{{ $pData['desc'] }}">
+                                <i class="{{ $pData['icon'] }} mr-1 {{ $isPActive ? 'text-white' : 'text-muted' }}"></i>
+                                {{ $pData['label'] }}
+                                <span class="badge {{ $isPActive ? 'badge-light text-primary' : 'badge-secondary' }} rounded-pill ml-1" style="font-size: 11px;">
+                                    {{ number_format($pData['count']) }}
+                                </span>
+                            </a>
+                        @endforeach
+                    </div>
+
+                    <!-- SOP Pengiriman SLA Badge -->
+                    <div class="d-inline-flex align-items-center px-3 py-1.5 rounded-pill"
+                         style="background: #fffbeb; border: 1px solid #fde68a; font-size: 12px;"
+                         title="SOP Toko: Pengiriman diusahakan selesai dalam 1 hari kerja (maksimal toleransi 2 hari jika orderan sedang ramai)">
+                        <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-warning text-dark mr-2" style="width: 20px; height: 20px; font-size: 10px;">
+                            <i class="fa-solid fa-bolt"></i>
+                        </span>
+                        <span class="text-dark">
+                            Target Pengiriman: <strong>1 Hari Penuh</strong>
+                            <span class="text-muted small ml-1">(Maks. 2 hari saat ramai)</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
             <!-- Modern KPI Status Filter Cards -->
             @php
                 $statusTabs = [
                     [
                         'key' => 'all',
-                        'label' => 'Semua Pesanan',
-                        'sub' => 'Total Transaksi',
+                        'label' => 'Semua Status',
+                        'sub' => 'Total Periode Ini',
                         'count' => $counts['all'],
                         'icon' => 'fa-solid fa-layer-group',
                         'iconBg' => '#eef2ff',
@@ -110,6 +189,7 @@
                         $isActive = ($tab['key'] === 'all' && (empty($status) || $status === 'all')) || ($status === $tab['key']);
                         $filterParams = array_filter([
                             'status' => $tab['key'] === 'all' ? null : $tab['key'],
+                            'periode' => $periode ?: null,
                             'search' => $search ?: null,
                             'metode' => ($metode && $metode !== 'all') ? $metode : null,
                         ]);
@@ -177,9 +257,9 @@
                         </form>
                         @endif
 
-                        @if($status || $search || ($metode && $metode !== 'all'))
+                        @if($status || $search || ($metode && $metode !== 'all') || ($periode && $periode !== 'today'))
                         <a href="{{ route('order.index') }}" class="btn btn-light border btn-sm rounded-pill font-weight-bold px-3 py-1.5 text-muted"
-                           title="Bersihkan semua kata kunci dan filter">
+                           title="Kembali ke pesanan Hari Ini dan bersihkan semua kata kunci filter">
                             <i class="fa-solid fa-arrows-rotate mr-1"></i> Reset Filter
                         </a>
                         @endif
@@ -189,6 +269,9 @@
                 <!-- Unified Search & Metode Filter Toolbar -->
                 <div class="card-body border-bottom py-3 px-4" style="background: #f8fafc;">
                     <form action="{{ route('order.index') }}" method="GET" class="row align-items-center" style="row-gap: 10px;">
+                        @if(!empty($periode))
+                            <input type="hidden" name="periode" value="{{ $periode }}">
+                        @endif
                         @if(!empty($status) && $status !== 'all')
                             <input type="hidden" name="status" value="{{ $status }}">
                         @endif
@@ -204,7 +287,7 @@
                                        style="border-radius: 0; border-color: #cbd5e1; font-size: 13.5px;">
                                 <div class="input-group-append">
                                     @if(!empty($search))
-                                        <a href="{{ route('order.index', array_filter(['status' => $status, 'metode' => $metode])) }}"
+                                        <a href="{{ route('order.index', array_filter(['status' => $status, 'metode' => $metode, 'periode' => $periode])) }}"
                                            class="btn btn-light border border-left-0 text-muted d-flex align-items-center"
                                            style="border-color: #cbd5e1;" title="Hapus pencarian">
                                             <i class="fa-solid fa-xmark"></i>
@@ -273,8 +356,13 @@
                                                 <i class="fa-regular fa-copy"></i>
                                             </button>
                                         </div>
-                                        <div class="text-muted mt-0.5" style="font-size: 11.5px;">
-                                            <i class="fa-regular fa-clock mr-1"></i>{{ $data->created_at->format('d M Y, H:i') }}
+                                        <div class="text-muted mt-0.5 d-flex align-items-center flex-wrap" style="font-size: 11.5px; gap: 4px;">
+                                            <span><i class="fa-regular fa-clock mr-1"></i>{{ $data->created_at->format('d M Y, H:i') }}</span>
+                                            @if($data->created_at->isToday())
+                                                <span class="badge badge-success text-white px-1.5 py-0.5 rounded-pill" style="font-size: 9.5px; font-weight: 600;">Hari Ini</span>
+                                            @elseif($data->created_at->isYesterday())
+                                                <span class="badge badge-warning text-dark px-1.5 py-0.5 rounded-pill" style="font-size: 9.5px; font-weight: 600;">Kemarin</span>
+                                            @endif
                                         </div>
                                         <div class="mt-1">
                                             <span class="badge badge-light border text-dark font-weight-500 px-2 py-0.5 d-inline-flex align-items-center"
@@ -446,13 +534,28 @@
                                         <div class="py-4">
                                             <span class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
                                                   style="width: 56px; height: 56px; background: #f1f5f9; color: #94a3b8; font-size: 24px;">
-                                                <i class="fa-solid fa-inbox"></i>
+                                                <i class="fa-solid fa-box-open"></i>
                                             </span>
-                                            <h6 class="font-weight-bold text-dark mb-1">Tidak Ada Pesanan Ditemukan</h6>
-                                            <p class="text-muted small mb-3">Tidak ada data transaksi yang cocok dengan kriteria filter saat ini.</p>
-                                            <a href="{{ route('order.index') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3 font-weight-bold">
-                                                <i class="fa-solid fa-arrows-rotate mr-1"></i> Reset Semua Filter
-                                            </a>
+                                            @if($periode === 'today')
+                                                <h6 class="font-weight-bold text-dark mb-1">Belum Ada Pesanan Masuk Hari Ini</h6>
+                                                <p class="text-muted small mb-3" style="max-width: 480px; margin: 0 auto;">
+                                                    Sesuai SOP, pesanan diproses maksimal 1-2 hari kerja saat ramai. Anda dapat melihat pesanan 2 hari terakhir untuk segera dikemas dan dikirim.
+                                                </p>
+                                                <div class="d-flex justify-content-center flex-wrap" style="gap: 8px;">
+                                                    <a href="{{ route('order.index', ['periode' => '2days']) }}" class="btn btn-sm btn-primary rounded-pill px-3 py-1.5 font-weight-bold" style="background: #4f46e5; border-color: #4f46e5;">
+                                                        <i class="fa-solid fa-truck-fast mr-1"></i> Cek 2 Hari Terakhir ({{ $periodCounts['2days'] ?? 0 }})
+                                                    </a>
+                                                    <a href="{{ route('order.index', ['periode' => 'all']) }}" class="btn btn-sm btn-light border rounded-pill px-3 py-1.5 text-muted font-weight-bold">
+                                                        <i class="fa-solid fa-layer-group mr-1"></i> Lihat Semua Arsip ({{ $periodCounts['all'] ?? 0 }})
+                                                    </a>
+                                                </div>
+                                            @else
+                                                <h6 class="font-weight-bold text-dark mb-1">Tidak Ada Pesanan Ditemukan</h6>
+                                                <p class="text-muted small mb-3">Tidak ada data transaksi yang cocok dengan kriteria filter yang dipilih.</p>
+                                                <a href="{{ route('order.index') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3 font-weight-bold">
+                                                    <i class="fa-solid fa-arrows-rotate mr-1"></i> Kembali ke Pesanan Hari Ini
+                                                </a>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>

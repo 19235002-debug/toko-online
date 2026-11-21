@@ -111,6 +111,70 @@ class PasswordResetAndAdminOrderTest extends TestCase
         });
     }
 
+    public function test_admin_order_period_filtering_and_defaults(): void
+    {
+        $admin = User::create([
+            'nama' => 'Admin Period Test',
+            'username' => 'admin_period_' . uniqid(),
+            'email' => 'admin_period_' . uniqid() . '@example.com',
+            'password' => Hash::make('password123'),
+            'role' => 'admin',
+        ]);
+
+        $orderToday = Order::create([
+            'kode_order' => 'ORD-TEST-TODAY-' . uniqid(),
+            'nama_customer' => 'Customer Hari Ini',
+            'no_hp' => '081111111111',
+            'alamat' => 'Alamat Hari Ini',
+            'metode_pembayaran' => 'midtrans',
+            'total_harga' => 100000,
+            'ongkir' => 10000,
+            'status' => 'diproses',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $orderOld = Order::create([
+            'kode_order' => 'ORD-TEST-OLD-' . uniqid(),
+            'nama_customer' => 'Customer 5 Hari Lalu',
+            'no_hp' => '082222222222',
+            'alamat' => 'Alamat Lama',
+            'metode_pembayaran' => 'cod',
+            'total_harga' => 120000,
+            'ongkir' => 10000,
+            'status' => 'selesai',
+            'created_at' => now()->subDays(5),
+            'updated_at' => now()->subDays(5),
+        ]);
+
+        // Default: Periode Hari Ini
+        $resDefault = $this->actingAs($admin)->get('/order');
+        $resDefault->assertStatus(200);
+        $resDefault->assertViewHas('periode', 'today');
+        $resDefault->assertViewHas('orders', function ($orders) use ($orderToday, $orderOld) {
+            return $orders->contains('kode_order', $orderToday->kode_order)
+                && !$orders->contains('kode_order', $orderOld->kode_order);
+        });
+
+        // Periode Semua Waktu: both orders appear
+        $resAll = $this->actingAs($admin)->get('/order?periode=all');
+        $resAll->assertStatus(200);
+        $resAll->assertViewHas('periode', 'all');
+        $resAll->assertViewHas('orders', function ($orders) use ($orderToday, $orderOld) {
+            return $orders->contains('kode_order', $orderToday->kode_order)
+                && $orders->contains('kode_order', $orderOld->kode_order);
+        });
+
+        // Periode 2 Hari Terakhir
+        $res2Days = $this->actingAs($admin)->get('/order?periode=2days');
+        $res2Days->assertStatus(200);
+        $res2Days->assertViewHas('periode', '2days');
+        $res2Days->assertViewHas('orders', function ($orders) use ($orderToday, $orderOld) {
+            return $orders->contains('kode_order', $orderToday->kode_order)
+                && !$orders->contains('kode_order', $orderOld->kode_order);
+        });
+    }
+
     public function test_image_compressor_stores_compressed_jpg(): void
     {
         Storage::fake('public');

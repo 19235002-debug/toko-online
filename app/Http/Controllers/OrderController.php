@@ -11,6 +11,7 @@ use App\Models\Setting;
 use App\Services\BiteshipService;
 use App\Services\RajaOngkirService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use RealRashid\SweetAlert\Facades\Alert;
 use Exception;
 
@@ -31,8 +32,42 @@ class OrderController extends Controller
         $status = $request->query('status');
         $search = trim((string) $request->query('search', ''));
         $metode = $request->query('metode', 'all');
+        $periode = $request->query('periode');
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date');
+
+        // Jika user melakukan pencarian kata kunci dan tidak menentukan periode, default ke 'all'
+        // Sebaliknya jika membuka halaman pesanan pertama kali, default ke 'today' (Hari Ini)
+        // sesuai SOP toko: pengiriman diusahakan 1 hari full, maksimal 2 hari saat pesanan ramai.
+        if (empty($periode)) {
+            $periode = ($search !== '') ? 'all' : 'today';
+        }
+
+        $now = Carbon::now();
+        $dateRange = null;
+
+        if ($periode === 'today') {
+            $dateRange = [$now->copy()->startOfDay(), $now->copy()->endOfDay()];
+        } elseif ($periode === '2days') {
+            // 2 Hari Terakhir (Kemarin & Hari ini) - batas toleransi maksimal pengiriman saat ramai
+            $dateRange = [$now->copy()->subDays(1)->startOfDay(), $now->copy()->endOfDay()];
+        } elseif ($periode === 'week') {
+            $dateRange = [$now->copy()->subDays(6)->startOfDay(), $now->copy()->endOfDay()];
+        } elseif ($periode === 'month') {
+            $dateRange = [$now->copy()->startOfMonth(), $now->copy()->endOfMonth()];
+        } elseif ($periode === 'custom' && $startDate && $endDate) {
+            try {
+                $dateRange = [Carbon::parse($startDate)->startOfDay(), Carbon::parse($endDate)->endOfDay()];
+            } catch (Exception $e) {
+                $dateRange = null;
+            }
+        }
 
         $query = Order::with('items')->orderBy('id_order', 'desc');
+
+        if ($dateRange) {
+            $query->whereBetween('created_at', $dateRange);
+        }
 
         if ($status && $status !== 'all') {
             $query->where('status', $status);
@@ -52,18 +87,47 @@ class OrderController extends Controller
 
         $orders = $query->get();
 
-        $counts = [
+        // Hitung total pesanan pada masing-masing periode untuk badge tabs
+        $periodCounts = [
+            'today' => Order::whereBetween('created_at', [$now->copy()->startOfDay(), $now->copy()->endOfDay()])->count(),
+            '2days' => Order::whereBetween('created_at', [$now->copy()->subDays(1)->startOfDay(), $now->copy()->endOfDay()])->count(),
+            'week' => Order::whereBetween('created_at', [$now->copy()->subDays(6)->startOfDay(), $now->copy()->endOfDay()])->count(),
+            'month' => Order::whereBetween('created_at', [$now->copy()->startOfMonth(), $now->copy()->endOfMonth()])->count(),
             'all' => Order::count(),
-            'pending' => Order::where('status', 'pending')->count(),
-            'diproses' => Order::where('status', 'diproses')->count(),
-            'dikirim' => Order::where('status', 'dikirim')->count(),
-            'selesai' => Order::where('status', 'selesai')->count(),
-            'dibatalkan' => Order::where('status', 'dibatalkan')->count(),
+        ];
+
+        // Sinkronkan status KPI card dengan filter periode & metode yang aktif
+        $baseStatusQuery = Order::query();
+        if ($dateRange) {
+            $baseStatusQuery->whereBetween('created_at', $dateRange);
+        }
+        if ($metode && $metode !== 'all') {
+            $baseStatusQuery->where('metode_pembayaran', $metode);
+        }
+
+        $counts = [
+            'all' => (clone $baseStatusQuery)->count(),
+            'pending' => (clone $baseStatusQuery)->where('status', 'pending')->count(),
+            'diproses' => (clone $baseStatusQuery)->where('status', 'diproses')->count(),
+            'dikirim' => (clone $baseStatusQuery)->where('status', 'dikirim')->count(),
+            'selesai' => (clone $baseStatusQuery)->where('status', 'selesai')->count(),
+            'dibatalkan' => (clone $baseStatusQuery)->where('status', 'dibatalkan')->count(),
         ];
 
         $biteshipWallet = BiteshipService::getAccountBalance();
 
-        return view('order.order', compact('orders', 'counts', 'status', 'search', 'metode', 'biteshipWallet'));
+        return view('order.order', compact(
+            'orders',
+            'counts',
+            'status',
+            'search',
+            'metode',
+            'periode',
+            'periodCounts',
+            'startDate',
+            'endDate',
+            'biteshipWallet'
+        ));
     }
 
     /**
