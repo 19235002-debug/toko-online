@@ -375,7 +375,7 @@
 				</a>
 			</div>
 
-			@if(!$orders->isEmpty())
+			@if(($counts['all'] ?? 0) > 0)
 			<!-- Quick Stats Row -->
 			<div class="row pt-2" style="margin-right: -6px; margin-left: -6px;">
 				<div class="col-6 col-md-3 mb-2 px-1.5">
@@ -384,7 +384,7 @@
 							<i class="fa-solid fa-receipt"></i>
 						</div>
 						<div>
-							<div class="kpi-val" id="stat-all-count">{{ $orders->total() }}</div>
+							<div class="kpi-val" id="stat-all-count">{{ $counts['all'] ?? $orders->total() }}</div>
 							<div class="kpi-lbl">Total Pesanan</div>
 						</div>
 					</div>
@@ -395,7 +395,7 @@
 							<i class="fa-solid fa-clock-rotate-left"></i>
 						</div>
 						<div>
-							<div class="kpi-val" id="stat-pending-count">-</div>
+							<div class="kpi-val" id="stat-pending-count">{{ $counts['pending'] ?? 0 }}</div>
 							<div class="kpi-lbl">Menunggu Bayar</div>
 						</div>
 					</div>
@@ -406,8 +406,8 @@
 							<i class="fa-solid fa-truck-fast"></i>
 						</div>
 						<div>
-							<div class="kpi-val" id="stat-active-count">-</div>
-							<div class="kpi-lbl">Dalam Pengiriman</div>
+							<div class="kpi-val" id="stat-active-count">{{ ($counts['diproses'] ?? 0) + ($counts['dikirim'] ?? 0) }}</div>
+							<div class="kpi-lbl">Proses &amp; Kirim</div>
 						</div>
 					</div>
 				</div>
@@ -417,7 +417,7 @@
 							<i class="fa-solid fa-circle-check"></i>
 						</div>
 						<div>
-							<div class="kpi-val" id="stat-done-count">-</div>
+							<div class="kpi-val" id="stat-done-count">{{ $counts['selesai'] ?? 0 }}</div>
 							<div class="kpi-lbl">Pesanan Selesai</div>
 						</div>
 					</div>
@@ -432,28 +432,28 @@
 		<div class="row justify-content-center">
 			<div class="col-lg-10">
 
-				@if(!$orders->isEmpty())
+				@if(($counts['all'] ?? 0) > 0)
 				<!-- Filter Status & Pencarian -->
 				<div class="order-filter-wrapper">
 					<div class="order-filter-pills">
-						<button type="button" class="order-filter-pill active" onclick="filterOrders('all', this)">
-							Semua <span class="count-badge" data-filter-count="all">({{ $orders->total() }})</span>
-						</button>
-						<button type="button" class="order-filter-pill" onclick="filterOrders('pending', this)">
-							Menunggu Pembayaran <span class="count-badge" data-filter-count="pending">(0)</span>
-						</button>
-						<button type="button" class="order-filter-pill" onclick="filterOrders('diproses', this)">
-							Sedang Dikemas <span class="count-badge" data-filter-count="diproses">(0)</span>
-						</button>
-						<button type="button" class="order-filter-pill" onclick="filterOrders('dikirim', this)">
-							Dikirim <span class="count-badge" data-filter-count="dikirim">(0)</span>
-						</button>
-						<button type="button" class="order-filter-pill" onclick="filterOrders('selesai', this)">
-							Selesai <span class="count-badge" data-filter-count="selesai">(0)</span>
-						</button>
-						<button type="button" class="order-filter-pill" onclick="filterOrders('dibatalkan', this)">
-							Dibatalkan <span class="count-badge" data-filter-count="dibatalkan">(0)</span>
-						</button>
+						<a href="{{ route('frontend.my_orders', ['status' => 'all']) }}" class="order-filter-pill {{ ($activeStatus ?? 'all') === 'all' ? 'active' : '' }}">
+							Semua <span class="count-badge">({{ $counts['all'] ?? 0 }})</span>
+						</a>
+						<a href="{{ route('frontend.my_orders', ['status' => 'pending']) }}" class="order-filter-pill {{ ($activeStatus ?? '') === 'pending' ? 'active' : '' }}">
+							Menunggu Pembayaran <span class="count-badge">({{ $counts['pending'] ?? 0 }})</span>
+						</a>
+						<a href="{{ route('frontend.my_orders', ['status' => 'diproses']) }}" class="order-filter-pill {{ ($activeStatus ?? '') === 'diproses' ? 'active' : '' }}">
+							Sedang Dikemas <span class="count-badge">({{ $counts['diproses'] ?? 0 }})</span>
+						</a>
+						<a href="{{ route('frontend.my_orders', ['status' => 'dikirim']) }}" class="order-filter-pill {{ ($activeStatus ?? '') === 'dikirim' ? 'active' : '' }}">
+							Dikirim <span class="count-badge">({{ $counts['dikirim'] ?? 0 }})</span>
+						</a>
+						<a href="{{ route('frontend.my_orders', ['status' => 'selesai']) }}" class="order-filter-pill {{ ($activeStatus ?? '') === 'selesai' ? 'active' : '' }}">
+							Selesai <span class="count-badge">({{ $counts['selesai'] ?? 0 }})</span>
+						</a>
+						<a href="{{ route('frontend.my_orders', ['status' => 'dibatalkan']) }}" class="order-filter-pill {{ ($activeStatus ?? '') === 'dibatalkan' ? 'active' : '' }}">
+							Dibatalkan <span class="count-badge">({{ $counts['dibatalkan'] ?? 0 }})</span>
+						</a>
 					</div>
 
 					<div class="order-search-box">
@@ -468,10 +468,22 @@
 					<div class="mx-auto mb-3 d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 76px; height: 76px; background: #eef2ff; color: #4f46e5;">
 						<i class="fa-solid fa-bag-shopping" style="font-size: 32px;"></i>
 					</div>
-					<h5 class="font-weight-bold text-dark mb-1">Belum Ada Riwayat Pesanan</h5>
-					<p class="text-muted mb-4" style="font-size: 13.5px;">Anda belum melakukan pemesanan barang di toko kami.</p>
-					<a href="/shop" class="btn btn-modern-primary px-4 py-2">
-						Mulai Belanja Sekarang
+					<h5 class="font-weight-bold text-dark mb-1">
+						@if(($counts['all'] ?? 0) > 0)
+							Tidak Ada Pesanan pada Kategori Ini
+						@else
+							Belum Ada Riwayat Pesanan
+						@endif
+					</h5>
+					<p class="text-muted mb-4" style="font-size: 13.5px;">
+						@if(($counts['all'] ?? 0) > 0)
+							Tidak ada pesanan berstatus "{{ ucfirst($activeStatus) }}". Silakan pilih tab status lain.
+						@else
+							Anda belum melakukan pemesanan barang di toko kami.
+						@endif
+					</p>
+					<a href="{{ ($counts['all'] ?? 0) > 0 ? route('frontend.my_orders') : '/shop' }}" class="btn btn-modern-primary px-4 py-2">
+						{{ ($counts['all'] ?? 0) > 0 ? 'Lihat Semua Pesanan' : 'Mulai Belanja Sekarang' }}
 					</a>
 				</div>
 				@else
@@ -524,6 +536,31 @@
 
 					<!-- Order Body -->
 					<div class="order-body">
+						@if($o->status === 'pending')
+							@if($o->metode_pembayaran === 'cod')
+							<div class="alert alert-warning py-2 px-3 mb-3 d-flex align-items-center" style="border-radius: 10px; font-size: 13px; background: #fffbeb; border: 1px solid #fde68a; color: #92400e;">
+								<i class="fa-solid fa-handshake mr-2" style="font-size: 16px;"></i>
+								<div>
+									<strong>Pesanan COD (Bayar di Tempat):</strong> Menunggu verifikasi toko sebelum dipacking. Siapkan pembayaran tunai saat kurir tiba.
+								</div>
+							</div>
+							@else
+							<div class="alert alert-warning py-2 px-3 mb-3 d-flex align-items-center" style="border-radius: 10px; font-size: 13px; background: #fffbeb; border: 1px solid #fde68a; color: #92400e;">
+								<i class="fa-regular fa-clock mr-2" style="font-size: 16px;"></i>
+								<div>
+									<strong>Menunggu Pembayaran:</strong> Silakan bayar dalam 3 hari agar pesanan Anda dapat segera dikirim oleh penjual.
+								</div>
+							</div>
+							@endif
+						@elseif($o->status === 'diproses')
+							<div class="alert alert-info py-2 px-3 mb-3 d-flex align-items-center" style="border-radius: 10px; font-size: 13px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af;">
+								<i class="fa-solid fa-box-open mr-2" style="font-size: 16px;"></i>
+								<div>
+									<strong>Sedang Dikemas:</strong> Penjual sedang menyiapkan barang pesanan Anda untuk segera diserahkan ke kurir pengiriman.
+								</div>
+							</div>
+						@endif
+
 						@foreach($o->items as $item)
 						<div class="item-row js-item-row" data-item-name="{{ strtolower($item->nama_barang) }}">
 							@if($item->barang && $item->barang->gambar)
@@ -543,6 +580,13 @@
 								<div class="text-muted small mt-1">
 									{{ $item->qty }} barang × Rp {{ number_format($item->harga, 0, ',', '.') }}
 								</div>
+								@if($o->status === 'selesai')
+								<div class="mt-2">
+									<button type="button" class="btn btn-xs btn-outline-warning font-weight-bold" onclick="openReviewModal('{{ $item->barang_id }}', '{{ addslashes($item->nama_barang) }}', '{{ $o->kode_order }}', '{{ addslashes($o->nama_customer) }}')" style="font-size: 11.5px; padding: 2px 9px; border-radius: 6px; border-color: #f59e0b; color: #d97706;">
+										<i class="fa-solid fa-star mr-1 text-warning"></i> Beri Ulasan Produk
+									</button>
+								</div>
+								@endif
 							</div>
 							<div class="text-right">
 								<span class="font-weight-bold text-dark" style="font-size: 14.5px;">
@@ -623,17 +667,28 @@
 										<i class="fa-solid fa-xmark"></i> Batalkan
 									</button>
 								</form>
-							@endif
 
-							@if($o->status === 'pending' && $o->metode_pembayaran === 'midtrans' && !empty($o->snap_token))
+								@if($o->metode_pembayaran === 'midtrans' && !empty($o->snap_token))
 								<button type="button" class="btn-action-base btn btn-sm btn-success font-weight-bold" onclick="paySnap('{{ $o->snap_token }}', '{{ $o->kode_order }}')">
 									<i class="fa-solid fa-credit-card"></i> Bayar Sekarang
 								</button>
+								@else
+								<a href="{{ store_wa_url('Halo Admin, saya ingin konfirmasi pesanan COD saya: ' . $o->kode_order) }}" target="_blank" class="btn-action-base btn btn-sm btn-outline-success font-weight-bold">
+									<i class="fa-brands fa-whatsapp"></i> Hubungi Toko
+								</a>
+								@endif
+							@endif
+
+							@if($o->status === 'diproses')
+								<a href="{{ store_wa_url('Halo Admin, saya ingin menanyakan pesanan saya: ' . $o->kode_order) }}" target="_blank" class="btn-action-base btn btn-sm btn-outline-success">
+									<i class="fa-brands fa-whatsapp"></i> Tanya Penjual
+								</a>
 							@endif
 
 							@if($o->status === 'dikirim')
 								<form action="{{ route('frontend.track.confirm', $o->kode_order) }}" method="POST" class="js-form-confirm-order" data-code="{{ $o->kode_order }}" style="display: inline-block;">
 									@csrf
+									<input type="hidden" name="from_my_orders" value="1">
 									<button type="button" class="btn-action-base btn btn-sm btn-success js-btn-confirm-order" style="background: #059669; border-color: #059669; color: #fff;">
 										<i class="fa-solid fa-check"></i> Konfirmasi Diterima
 									</button>
@@ -646,6 +701,10 @@
 
 							<!-- SATU-SATUNYA TOMBOL LACAK (Konsisten & Rapi) -->
 							<a href="/lacak-pesanan?order={{ $o->kode_order }}" class="btn-action-base btn btn-sm btn-outline-primary" title="Lacak posisi pengiriman paket real-time">
+								<i class="fa-solid fa-location-dot"></i> Lacak Paket
+							</a>
+						</div>
+					</div>
 								<i class="fa-solid fa-location-dot"></i> Lacak Paket
 							</a>
 						</div>
@@ -667,6 +726,62 @@
 		</div>
 	</div>
 
+	<!-- Modal Tulis Ulasan Produk -->
+	<div class="modal fade" id="modalOrderReview" tabindex="-1" role="dialog" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered" role="document">
+			<div class="modal-content" style="border-radius: 16px; overflow: hidden; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+				<div class="modal-header bg-dark text-white p-lr-25 p-tb-15" style="background-color: #0f172a !important;">
+					<h5 class="modal-title font-weight-bold text-white" style="font-size: 1.1rem;">
+						<i class="fa-solid fa-star text-warning mr-1"></i> Tulis Ulasan Produk
+					</h5>
+					<button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" style="opacity: 0.85;">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<form id="formOrderReview" onsubmit="submitOrderReview(event)">
+					@csrf
+					<input type="hidden" name="barang_id" id="order_review_barang_id" value="">
+					<input type="hidden" name="order_ref" id="order_review_order_ref" value="">
+					<div class="modal-body p-all-25" style="background: #fafafa;">
+						<div class="mb-3 p-2.5 bg-white rounded border">
+							<small class="text-muted d-block" style="font-size: 11.5px;">Produk yang Diulas:</small>
+							<strong class="text-dark" id="order_review_product_name" style="font-size: 14px;">Nama Produk</strong>
+						</div>
+
+						<div class="form-group mb-3">
+							<label class="small font-weight-bold text-dark mb-1">Rating Kepuasan <span class="text-danger">*</span>:</label>
+							<div class="d-flex align-items-center" style="font-size: 1.5rem; color: #f59e0b; cursor: pointer; gap: 4px;">
+								<i class="fa-solid fa-star js-ostar" data-rating="1" onclick="selectTrackStar(1)"></i>
+								<i class="fa-solid fa-star js-ostar" data-rating="2" onclick="selectTrackStar(2)"></i>
+								<i class="fa-solid fa-star js-ostar" data-rating="3" onclick="selectTrackStar(3)"></i>
+								<i class="fa-solid fa-star js-ostar" data-rating="4" onclick="selectTrackStar(4)"></i>
+								<i class="fa-solid fa-star js-ostar" data-rating="5" onclick="selectTrackStar(5)"></i>
+								<span class="small text-muted font-weight-bold ml-2" id="order_star_text" style="font-size: 12.5px;">5 Bintang (Sangat Puas)</span>
+							</div>
+							<input type="hidden" name="rating" id="order_rating_val" value="5">
+						</div>
+
+						<div class="form-group mb-3">
+							<label class="small font-weight-bold text-dark mb-1">Nama Lengkap Anda <span class="text-danger">*</span>:</label>
+							<input type="text" name="nama_reviewer" id="order_review_nama" class="form-control" required style="border-radius: 8px;">
+						</div>
+
+						<div class="form-group mb-3">
+							<label class="small font-weight-bold text-dark mb-1">Pengalaman / Ulasan Produk <span class="text-danger">*</span>:</label>
+							<textarea name="komentar" id="order_review_komentar" rows="3" class="form-control" placeholder="Ceritakan kepuasan Anda mengenai produk ini..." required style="border-radius: 8px;"></textarea>
+						</div>
+					</div>
+					<div class="modal-footer bg-light p-lr-25 p-tb-12">
+						<button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal" style="border-radius: 6px;">Batal</button>
+						<button type="submit" class="btn btn-primary btn-sm font-weight-bold" id="btn-submit-order-review" style="background: #4f46e5; border-color: #4f46e5; border-radius: 6px;">
+							<i class="fa-solid fa-paper-plane mr-1"></i> Kirim Ulasan
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+
 	@include('frontend.partials.footer')
 
 	<!-- Scripts -->
@@ -679,50 +794,84 @@
 	@endif
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 	<script>
-		var currentFilter = 'all';
-
-		// Hitung statistik pesanan secara dinamis
-		function updateFilterCounts() {
-			var counts = { all: 0, pending: 0, diproses: 0, dikirim: 0, selesai: 0, dibatalkan: 0 };
-			$('.js-order-card').each(function() {
-				counts.all++;
-				var st = $(this).data('status');
-				if (counts[st] !== undefined) counts[st]++;
-			});
-
-			$('[data-filter-count]').each(function() {
-				var key = $(this).data('filter-count');
-				if (counts[key] !== undefined) {
-					$(this).text('(' + counts[key] + ')');
-				}
-			});
-
-			$('#stat-pending-count').text(counts.pending);
-			$('#stat-active-count').text(counts.dikirim);
-			$('#stat-done-count').text(counts.selesai);
+		// Modal Review Handlers
+		function openReviewModal(barangId, namaBarang, kodeOrder, namaCustomer) {
+			$('#order_review_barang_id').val(barangId);
+			$('#order_review_order_ref').val(kodeOrder);
+			$('#order_review_product_name').text(namaBarang);
+			$('#order_review_nama').val(namaCustomer);
+			$('#order_review_komentar').val('');
+			selectTrackStar(5);
+			$('#modalOrderReview').modal('show');
 		}
 
-		// Filter Tab Status Pesanan
-		function filterOrders(status, btn) {
-			currentFilter = status;
-			$('.order-filter-pill').removeClass('active');
-			$(btn).addClass('active');
-			applyFilters();
+		function selectTrackStar(val) {
+			$('#order_rating_val').val(val);
+			var labels = ['', '1 Bintang (Sangat Buruk)', '2 Bintang (Kurang Puas)', '3 Bintang (Cukup)', '4 Bintang (Bagus & Puas)', '5 Bintang (Sangat Puas)'];
+			$('#order_star_text').text(labels[val] || (val + ' Bintang'));
+			$('.js-ostar').each(function() {
+				var r = parseInt($(this).data('rating'));
+				if (r <= val) {
+					$(this).removeClass('text-muted').addClass('text-warning');
+				} else {
+					$(this).removeClass('text-warning').addClass('text-muted');
+				}
+			});
+		}
+
+		function submitOrderReview(e) {
+			e.preventDefault();
+			var $btn = $('#btn-submit-order-review');
+			var orig = $btn.html();
+			$btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin mr-1"></i> Menyimpan...');
+
+			var data = {
+				_token: '{{ csrf_token() }}',
+				barang_id: $('#order_review_barang_id').val(),
+				order_ref: $('#order_review_order_ref').val(),
+				nama_reviewer: $('#order_review_nama').val(),
+				rating: $('#order_rating_val').val(),
+				komentar: $('#order_review_komentar').val()
+			};
+
+			$.ajax({
+				url: '{{ route("frontend.review.store") }}',
+				type: 'POST',
+				data: data,
+				success: function(res) {
+					$('#modalOrderReview').modal('hide');
+					Swal.fire({
+						title: 'Ulasan Berhasil Disimpan!',
+						text: res.message || 'Terima kasih telah memberikan ulasan untuk produk ini.',
+						icon: 'success',
+						confirmButtonColor: '#4f46e5'
+					});
+				},
+				error: function(xhr) {
+					var msg = "Gagal mengirim ulasan.";
+					if (xhr.responseJSON && xhr.responseJSON.message) {
+						msg = xhr.responseJSON.message;
+					}
+					Swal.fire({
+						title: 'Perhatian',
+						text: msg,
+						icon: 'warning',
+						confirmButtonColor: '#4f46e5'
+					});
+				},
+				complete: function() {
+					$btn.prop('disabled', false).html(orig);
+				}
+			});
 		}
 
 		// Pencarian Live Order
 		function searchOrders(keyword) {
-			applyFilters();
-		}
-
-		function applyFilters() {
-			var keyword = ($('#orderSearchInput').val() || '').toLowerCase().trim();
+			keyword = (keyword || '').toLowerCase().trim();
 			var visibleCount = 0;
 
 			$('.js-order-card').each(function() {
 				var $card = $(this);
-				var statusMatch = (currentFilter === 'all' || $card.data('status') === currentFilter);
-				
 				var searchMatch = true;
 				if (keyword !== '') {
 					var orderCode = String($card.data('order-code') || '').toLowerCase();
@@ -735,7 +884,7 @@
 					searchMatch = orderCode.includes(keyword) || resi.includes(keyword) || itemNames.includes(keyword);
 				}
 
-				if (statusMatch && searchMatch) {
+				if (searchMatch) {
 					$card.show();
 					visibleCount++;
 				} else {
@@ -869,7 +1018,7 @@
 
 		// Inisialisasi awal
 		$(document).ready(function() {
-			updateFilterCounts();
+			// Ready
 		});
 	</script>
 </body>

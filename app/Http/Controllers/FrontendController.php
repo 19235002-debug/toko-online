@@ -450,6 +450,11 @@ class FrontendController extends Controller
         }
         $order->save();
 
+        if ($request->has('from_my_orders')) {
+            return redirect()->route('frontend.my_orders')
+                ->with('success', 'Pesanan ' . $kode_order . ' berhasil dikonfirmasi selesai! Terima kasih sudah berbelanja.');
+        }
+
         return redirect()->route('frontend.track', ['order' => $kode_order])
             ->with('success', 'Pesanan telah dikonfirmasi sampai dan selesai! Silakan berikan ulasan Anda di bawah.');
     }
@@ -554,17 +559,41 @@ class FrontendController extends Controller
         // Batalkan pesanan belum dibayar yang melewati batas 3 hari
         OrderController::cancelUnpaidOrders(3);
 
-        $orders = Order::with('items.barang')
-            ->where(function ($q) use ($user) {
-                $q->where('user_id', $user->id_user);
-                if ($user->no_hp) {
-                    $q->orWhere('no_hp', $user->no_hp);
-                }
-            })
-            ->latest('id_order')
-            ->paginate(10);
+        $baseQuery = Order::where(function ($q) use ($user) {
+            $q->where('user_id', $user->id_user);
+            if ($user->no_hp) {
+                $q->orWhere('no_hp', $user->no_hp);
+            }
+        });
 
-        return view('frontend.pesanan-saya', compact('orders', 'user'));
+        // Hitung count riil per status untuk user ini
+        $rawCounts = (clone $baseQuery)
+            ->selectRaw('status, count(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status')
+            ->toArray();
+
+        $counts = [
+            'all' => array_sum($rawCounts),
+            'pending' => $rawCounts['pending'] ?? 0,
+            'diproses' => $rawCounts['diproses'] ?? 0,
+            'dikirim' => $rawCounts['dikirim'] ?? 0,
+            'selesai' => $rawCounts['selesai'] ?? 0,
+            'dibatalkan' => $rawCounts['dibatalkan'] ?? 0,
+        ];
+
+        $activeStatus = $request->query('status', 'all');
+        $query = (clone $baseQuery)->with('items.barang');
+
+        if ($activeStatus && $activeStatus !== 'all' && in_array($activeStatus, ['pending', 'diproses', 'dikirim', 'selesai', 'dibatalkan'])) {
+            $query->where('status', $activeStatus);
+        }
+
+        $orders = $query->latest('id_order')
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('frontend.pesanan-saya', compact('orders', 'user', 'counts', 'activeStatus'));
     }
 
     /**

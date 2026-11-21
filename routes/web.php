@@ -68,6 +68,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 Route::middleware('auth')->group(function () {
     // Riwayat Belanja / Pesanan Saya
     Route::get('/pesanan-saya', [FrontendController::class, 'myOrders'])->name('frontend.my_orders');
+    Route::get('/orders', fn() => redirect()->route('frontend.my_orders'))->name('frontend.orders');
     Route::post('/pesanan-saya/{kode_order}/cancel', [FrontendController::class, 'cancelOrder'])->name('frontend.order.cancel');
     Route::get('/pesanan-saya/{kode_order}/invoice', [FrontendController::class, 'printCustomerInvoice'])->name('frontend.order.invoice');
 
