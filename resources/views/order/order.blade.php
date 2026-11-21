@@ -504,13 +504,23 @@
                                                    title="Cetak Label Resi Barcode Thermal">
                                                     <i class="fa-solid fa-barcode mr-1"></i> Label
                                                 </a>
-                                            @elseif($data->status === 'diproses' || ($data->status === 'pending' && $data->metode_pembayaran === 'cod'))
+                                            @elseif($data->status === 'diproses')
                                                 <form action="{{ route('order.requestPickup', $data->id_order) }}" method="POST" class="d-inline">
                                                     @csrf
                                                     <button type="submit" class="btn btn-sm btn-warning text-dark font-weight-bold px-2 py-1"
                                                             style="border-radius: 8px; font-size: 12px; background: #f59e0b; border-color: #f59e0b;"
-                                                            title="Request Pick-up Kurir Ekspedisi Otomatis">
+                                                            title="Request Pick-up Kurir Ekspedisi Otomatis via Biteship">
                                                         <i class="fa-solid fa-truck-pickup mr-1"></i> Pick-up
+                                                    </button>
+                                                </form>
+                                            @elseif($data->status === 'pending' && $data->metode_pembayaran === 'cod')
+                                                <form action="{{ route('order.updateStatus', $data->id_order) }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    <input type="hidden" name="status" value="diproses">
+                                                    <button type="submit" class="btn btn-sm btn-success font-weight-bold px-2 py-1"
+                                                            style="border-radius: 8px; font-size: 12px; background: #10b981; border-color: #10b981;"
+                                                            title="Verifikasi & Konfirmasi Pesanan COD untuk Siap Dikemas">
+                                                        <i class="fa-solid fa-circle-check mr-1"></i> Konfirmasi COD
                                                     </button>
                                                 </form>
                                             @elseif($data->status === 'pending' && $data->metode_pembayaran === 'midtrans')
